@@ -26,7 +26,7 @@ export const KNOWLEDGE_CHUNKS: KnowledgeChunk[] = [
     title: "No login required",
     sourceType: "foundation",
     text: "A conversation does not require a subscription or a password. Guest sessions live only in this browser until you leave. For a curated path, you may share a preferred name and email so the companion can recognize you later.",
-    tags: ["login", "subscription", "identity", "email", "curated"],
+    tags: ["login", "log", "sign", "subscription", "pay", "free", "cost", "password", "account", "curated"],
   },
   {
     id: "foundation-curated",
@@ -40,7 +40,7 @@ export const KNOWLEDGE_CHUNKS: KnowledgeChunk[] = [
     title: "Not therapy",
     sourceType: "foundation",
     text: "This companion is not medical care, psychotherapy, or a replacement for a living sangha. If you are in immediate danger or thinking of harming yourself, contact local emergency services. In the United States you can call or text 988.",
-    tags: ["therapy", "crisis", "suicide", "harm", "help", "988"],
+    tags: ["therapy", "therapist", "crisis", "emergency", "988"],
   },
   {
     id: "foundation-knowledge",
@@ -80,21 +80,42 @@ const STOP = new Set([
   "why",
   "can",
   "please",
+  "about",
+  "am",
+  "are",
+  "any",
+  "does",
+  "get",
+  "have",
+  "help",
+  "need",
+  "should",
+  "tell",
+  "teach",
+  "want",
+  "would",
+  "your",
 ]);
 
-export function retrieve(query: string, limit = 3): KnowledgeChunk[] {
-  const terms = query
+function words(text: string): string[] {
+  return text
     .toLowerCase()
     .split(/[^a-z0-9']+/)
     .filter((t) => t.length > 1 && !STOP.has(t));
+}
+
+export function retrieve(query: string, limit = 3): KnowledgeChunk[] {
+  const terms = words(query);
 
   if (terms.length === 0) {
     return [KNOWLEDGE_CHUNKS[0]];
   }
 
+  // Whole-word matching so generic words ("teach", "need") don't pull in
+  // unrelated chunks via substrings ("teachings", "needs").
   const scored = KNOWLEDGE_CHUNKS.map((chunk) => {
-    const hay = `${chunk.title} ${chunk.text} ${chunk.tags.join(" ")}`.toLowerCase();
-    const score = terms.reduce((sum, term) => sum + (hay.includes(term) ? 1 : 0), 0);
+    const vocab = new Set(words(`${chunk.title} ${chunk.text} ${chunk.tags.join(" ")}`));
+    const score = terms.reduce((sum, term) => sum + (vocab.has(term) ? 1 : 0), 0);
     return { chunk, score };
   })
     .filter((row) => row.score > 0)
@@ -103,14 +124,23 @@ export function retrieve(query: string, limit = 3): KnowledgeChunk[] {
   return scored.slice(0, limit).map((row) => row.chunk);
 }
 
+const CRISIS_PHRASES = [
+  "suicide",
+  "suicidal",
+  "kill myself",
+  "want to die",
+  "end my life",
+  "end it all",
+  "hurt myself",
+  "self harm",
+  "self-harm",
+  "no reason to live",
+  "don't want to live",
+  "dont want to live",
+  "don't want to be alive",
+];
+
 export function isCrisis(query: string): boolean {
-  const q = query.toLowerCase();
-  return (
-    q.includes("suicide") ||
-    q.includes("kill myself") ||
-    q.includes("want to die") ||
-    q.includes("end my life") ||
-    q.includes("self harm") ||
-    q.includes("self-harm")
-  );
+  const q = query.toLowerCase().replace(/[\u2018\u2019]/g, "'");
+  return CRISIS_PHRASES.some((phrase) => q.includes(phrase));
 }

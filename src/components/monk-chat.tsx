@@ -44,6 +44,8 @@ export function MonkChat() {
   useEffect(() => {
     const stored = loadProfile();
     if (stored) {
+      // localStorage is only readable after hydration, so this must run in an effect.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProfile(stored);
       setForm(stored);
     }
