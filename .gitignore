@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw transcripts / source media (kept out of git; ingested into the database)
+/knowledge/sources/*
+!/knowledge/sources/README.md
