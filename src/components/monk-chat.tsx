@@ -242,14 +242,29 @@ export function MonkChat() {
             <p className="whitespace-pre-wrap leading-7">{message.content}</p>
             {message.citations && message.citations.length > 0 ? (
               <ul className="mt-2 flex flex-wrap gap-2">
-                {message.citations.map((c) => (
-                  <li
-                    key={c.id}
-                    className="rounded-full border border-[var(--line)] px-2 py-0.5 text-xs text-[var(--muted)]"
-                  >
-                    {c.title}
-                  </li>
-                ))}
+                {message.citations.map((c, i) => {
+                  const label =
+                    c.sourceType === "foundation" ? c.title : `[${i + 1}] ${c.title}`;
+                  return (
+                    <li
+                      key={c.id}
+                      className="rounded-full border border-[var(--line)] px-2 py-0.5 text-xs text-[var(--muted)]"
+                    >
+                      {c.url ? (
+                        <a
+                          href={c.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline-offset-2 hover:underline"
+                        >
+                          {label} ↗
+                        </a>
+                      ) : (
+                        label
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             ) : null}
           </article>
@@ -299,7 +314,7 @@ export function MonkChat() {
 function speak(text: string) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
+  const utterance = new SpeechSynthesisUtterance(text.replace(/\s*\[\d+(?:,\s*\d+)*\]/g, ""));
   utterance.rate = 0.95;
   window.speechSynthesis.speak(utterance);
 }

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { replyTo, type ChatMessage } from "@/lib/chat";
+import { answer, type ChatMessage } from "@/lib/chat";
+
+// Two model calls plus a database search; allow time for both.
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -21,7 +24,8 @@ export async function POST(request: Request) {
         (m.role === "user" || m.role === "assistant") &&
         typeof m.content === "string",
     )
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))
     .slice(-20);
 
-  return NextResponse.json(replyTo(safe));
+  return NextResponse.json(await answer(safe));
 }

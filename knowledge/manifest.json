@@ -1,0 +1,18 @@
+{
+  "_comment": "Video links and languages for transcripts in knowledge/sources. Keys are matched against the transcript title (case-insensitive). Add a videoUrl when you know the exact video; otherwise the series playlist is used.",
+  "series": {
+    "buddhist tips for a happy life": {
+      "language": "en",
+      "playlistUrl": "https://www.youtube.com/playlist?list=PLPZlkn5lIEj0"
+    },
+    "heart advice for a happy life": {
+      "language": "en",
+      "playlistUrl": "https://www.youtube.com/playlist?list=PLPZlkn5lIEj0"
+    }
+  },
+  "videos": {
+    "heart advice for a happy life 1": "https://youtu.be/bRvDzxRu1js",
+    "heart advice for a happy life 4": "https://youtu.be/6ajTLcjD6uQ",
+    "buddhist tips for a happy life 15": "https://youtu.be/JvvsJgfWEL8"
+  }
+}
