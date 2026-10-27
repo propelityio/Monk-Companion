@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f4efe6;
+  --paper-strong: #ebe4d6;
+  --ink: #2c241c;
+  --muted: #6b5e50;
+  --line: #d8cebe;
+  --background: var(--paper);
+  --foreground: var(--ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-source-sans);
+  --font-serif: var(--font-source-serif);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+html,
+body {
+  height: 100%;
+}
