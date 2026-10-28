@@ -49,6 +49,8 @@ type UiText = {
   guest: string;
   curatedFor: (name: string) => string;
   speakReplies: string;
+  aiVoice: string;
+  aiVoiceNote: string;
   curatedPath: string;
   path: string;
   profileIntro: string;
@@ -79,6 +81,8 @@ export const UI: Record<Locale, UiText> = {
     guest: "Guest conversation · no account required",
     curatedFor: (n) => `Curated for ${n}`,
     speakReplies: "Speak replies",
+    aiVoice: "AI voice",
+    aiVoiceNote: "Replies are read aloud by an AI-generated voice, not a recording of a real person.",
     curatedPath: "Curated path",
     path: "Path",
     profileIntro:
@@ -141,6 +145,8 @@ export const UI: Record<Locale, UiText> = {
     guest: "Conversación de invitado · sin cuenta",
     curatedFor: (n) => `Camino de ${n}`,
     speakReplies: "Leer respuestas en voz alta",
+    aiVoice: "Voz de IA",
+    aiVoiceNote: "Las respuestas se leen con una voz generada por IA, no con la grabación de una persona real.",
     curatedPath: "Camino personal",
     path: "Camino",
     profileIntro:
@@ -203,6 +209,8 @@ export const UI: Record<Locale, UiText> = {
     guest: "Conversa de visitante · sem conta",
     curatedFor: (n) => `Caminho de ${n}`,
     speakReplies: "Ler respostas em voz alta",
+    aiVoice: "Voz de IA",
+    aiVoiceNote: "As respostas são lidas por uma voz gerada por IA, não pela gravação de uma pessoa real.",
     curatedPath: "Caminho pessoal",
     path: "Caminho",
     profileIntro:
@@ -265,6 +273,8 @@ export const UI: Record<Locale, UiText> = {
     guest: "Conversation invitée · sans compte",
     curatedFor: (n) => `Chemin de ${n}`,
     speakReplies: "Lire les réponses à voix haute",
+    aiVoice: "Voix IA",
+    aiVoiceNote: "Les réponses sont lues par une voix générée par IA, et non par l’enregistrement d’une personne réelle.",
     curatedPath: "Chemin personnel",
     path: "Chemin",
     profileIntro:
@@ -327,6 +337,8 @@ export const UI: Record<Locale, UiText> = {
     guest: "Gastgespräch · kein Konto nötig",
     curatedFor: (n) => `Weg für ${n}`,
     speakReplies: "Antworten vorlesen",
+    aiVoice: "KI-Stimme",
+    aiVoiceNote: "Antworten werden von einer KI-generierten Stimme vorgelesen, nicht von der Aufnahme eines echten Menschen.",
     curatedPath: "Persönlicher Weg",
     path: "Weg",
     profileIntro:
@@ -389,6 +401,8 @@ export const UI: Record<Locale, UiText> = {
     guest: "Conversazione ospite · nessun account",
     curatedFor: (n) => `Percorso di ${n}`,
     speakReplies: "Leggi le risposte ad alta voce",
+    aiVoice: "Voce IA",
+    aiVoiceNote: "Le risposte sono lette da una voce generata dall’IA, non dalla registrazione di una persona reale.",
     curatedPath: "Percorso personale",
     path: "Percorso",
     profileIntro:
@@ -451,6 +465,8 @@ export const UI: Record<Locale, UiText> = {
     guest: "访客对话 · 无需账户",
     curatedFor: (n) => `${n} 的修行之路`,
     speakReplies: "朗读回复",
+    aiVoice: "AI 语音",
+    aiVoiceNote: "回复由 AI 生成的语音朗读，并非真人录音。",
     curatedPath: "个人修行之路",
     path: "修行之路",
     profileIntro: "可选。留下称呼和电子邮箱即可让我们认出你。在正式的身份服务上线前，信息仅保存在此浏览器中。",
@@ -496,6 +512,8 @@ export const UI: Record<Locale, UiText> = {
     guest: "ゲストとして対話 · アカウント不要",
     curatedFor: (n) => `${n} さんの道`,
     speakReplies: "返答を読み上げる",
+    aiVoice: "AI音声",
+    aiVoiceNote: "返答は AI が生成した音声で読み上げられます。実在の人物の録音ではありません。",
     curatedPath: "あなたの道",
     path: "道",
     profileIntro: "任意です。お名前とメールアドレスがあれば、あなたを覚えておけます。本格的な認証サービスができるまでは、このブラウザに保存されます。",

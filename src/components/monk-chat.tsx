@@ -193,6 +193,13 @@ export function MonkChat() {
               }}
             />
             {t.speakReplies}
+            <span
+              className="rounded-full border border-[var(--saffron)] px-1.5 py-px text-[10px] leading-4 text-[var(--maroon)]"
+              title={t.aiVoiceNote}
+            >
+              {t.aiVoice}
+            </span>
+            <span className="sr-only">{t.aiVoiceNote}</span>
           </label>
           <button
             type="button"
