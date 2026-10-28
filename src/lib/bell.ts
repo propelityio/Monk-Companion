@@ -75,7 +75,7 @@ export function playBell(volume = 0.22): void {
   }
 }
 
-function unlockAudio(): void {
+export function unlockAudio(): void {
   try {
     const Ctor =
       window.AudioContext ??
@@ -133,4 +133,9 @@ export function justRangBell(withinMs = 4000): boolean {
 /** Mark the arrival as handled so the greeting is spoken only once. */
 export function clearBell(): void {
   bellRangAt = 0;
+}
+
+/** The shared audio engine, but only if the browser has let it start. */
+export function runningAudioContext(): AudioContext | null {
+  return ctx && ctx.state === "running" ? ctx : null;
 }

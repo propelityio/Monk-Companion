@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import type { ChatCitation, ChatMessage } from "@/lib/chat";
 import { LOCALE_NAMES, LOCALES, SPEECH_LANG, UI, toLocale, type Locale } from "@/lib/i18n";
 import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib/profile";
-import { clearBell, justRangBell, whenBellDone } from "@/lib/bell";
+import { clearBell, justRangBell, runningAudioContext, unlockAudio, whenBellDone } from "@/lib/bell";
 import {
   detectRegion,
   getReplyMode,
@@ -191,6 +191,7 @@ export function MonkChat() {
     // A ref, not state: two quick clicks happen before state updates.
     if (!content || sendingRef.current) return;
     sendingRef.current = true;
+    unlockAudio(); // lets the softened voice play later in this exchange
 
     const nextMessages: DisplayMessage[] = [...latest.current.messages, { role: "user", content }];
     setReveal(null);
@@ -254,6 +255,7 @@ export function MonkChat() {
   }
 
   function startListening() {
+    unlockAudio();
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Ctor) {
       setInput((prev) => prev || t.voiceUnavailable);
@@ -642,6 +644,35 @@ function stopSpeaking() {
   window.speechSynthesis?.cancel();
 }
 
+/**
+ * Soften the voice: a little less treble and "s" sharpness, a touch more
+ * warmth. Only when the browser's audio engine is already running; otherwise
+ * the voice plays as is.
+ */
+function warmVoice(audio: HTMLAudioElement) {
+  const ac = runningAudioContext();
+  if (!ac) return;
+  try {
+    const source = ac.createMediaElementSource(audio);
+    const warmth = ac.createBiquadFilter();
+    warmth.type = "lowshelf";
+    warmth.frequency.value = 220;
+    warmth.gain.value = 2;
+    const treble = ac.createBiquadFilter();
+    treble.type = "highshelf";
+    treble.frequency.value = 4500;
+    treble.gain.value = -5;
+    const esses = ac.createBiquadFilter();
+    esses.type = "peaking";
+    esses.frequency.value = 7000;
+    esses.Q.value = 1.5;
+    esses.gain.value = -4;
+    source.connect(warmth).connect(treble).connect(esses).connect(ac.destination);
+  } catch {
+    /* plays unsoftened */
+  }
+}
+
 /** Index of the first start time after `t` (= characters already begun). */
 function spokenCount(starts: number[], t: number): number {
   let lo = 0;
@@ -708,6 +739,7 @@ async function speak(text: string, locale: Locale, hooks: SpeakHooks = {}) {
           hooks.onProgress?.(clean.length);
           hooks.onEnd?.();
         };
+        warmVoice(audio);
         currentAudio = audio;
         await audio.play();
         return;

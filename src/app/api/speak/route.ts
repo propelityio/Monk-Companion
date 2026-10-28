@@ -34,13 +34,19 @@ export async function POST(request: Request) {
 
   let text = "";
   let speed = SPEED;
+  let testSettings: Record<string, number | boolean> = {};
   try {
-    const body = (await request.json()) as { text?: unknown; speed?: unknown };
+    const body = (await request.json()) as {
+      text?: unknown;
+      speed?: unknown;
+      settings?: Record<string, number | boolean>;
+    };
     text = typeof body?.text === "string" ? body.text : "";
     // Local testing only: try other speeds without redeploying.
     if (process.env.NODE_ENV === "development" && typeof body?.speed === "number") {
       speed = Math.min(1.2, Math.max(0.7, body.speed));
     }
+    if (process.env.NODE_ENV === "development" && body?.settings) testSettings = body.settings;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -64,11 +70,12 @@ export async function POST(request: Request) {
         text,
         model_id: process.env.ELEVENLABS_MODEL ?? "eleven_multilingual_v2",
         voice_settings: {
-          stability: 0.7, // steadier, less dramatic delivery
-          similarity_boost: 0.75,
+          stability: 0.75, // steady, unhurried delivery
+          similarity_boost: 0.6, // a little smoother than the voice's raw texture
           style: 0,
-          use_speaker_boost: true,
+          use_speaker_boost: false, // boost adds edge to bright voices
           speed,
+          ...testSettings, // local testing only
         },
       }),
     },
