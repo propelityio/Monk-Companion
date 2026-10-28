@@ -28,7 +28,7 @@ export default function Home() {
           <OpenChatLink
             className="rounded-full bg-[var(--maroon)] px-6 py-3 text-[var(--paper)] transition-colors hover:bg-[var(--maroon-deep)]"
           >
-            Open Monk Chat
+            Begin a conversation
           </OpenChatLink>
         </div>
         <section
