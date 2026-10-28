@@ -49,6 +49,12 @@ export function MonkChat() {
   const mode = useReplyMode();
   const handsFree = useHandsFree();
   const [shownText, setShownText] = useState<Set<number>>(() => new Set());
+  // Arriving by the bell in a voice mode, the greeting stays hidden until the
+  // Monk starts saying it. (Arriving directly, there's no bell and no wait.)
+  const [greetingPending, setGreetingPending] = useState(
+    () => typeof window !== "undefined" && justRangBell() && getReplyMode() !== "text",
+  );
+  const showGreeting = !greetingPending || mode === "text";
   const [profile, setProfile] = useState<GuestProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState<GuestProfile>({ name: "", email: "", intention: "" });
@@ -76,18 +82,23 @@ export function MonkChat() {
     if (!justRangBell() || getReplyMode() === "text") return;
     let cancelled = false;
     let timer = 0;
+    let safety = 0;
     void whenBellDone().then(() => {
       if (cancelled) return;
       timer = window.setTimeout(() => {
         if (cancelled) return;
         clearBell();
         const { greetingText: g, locale: l } = latest.current;
-        if (g) void speak(g, l, afterSpeaking);
+        // If the voice can't start for any reason, show the words anyway.
+        safety = window.setTimeout(() => setGreetingPending(false), 4000);
+        if (g) void speak(g, l, afterSpeaking, () => setGreetingPending(false));
+        else setGreetingPending(false);
       }, 400);
     });
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
+      window.clearTimeout(safety);
     };
   }, []);
 
@@ -373,7 +384,11 @@ export function MonkChat() {
       <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-6">
         <article className="mr-8 border-l-2 border-[var(--saffron-soft)] pl-4 sm:mr-24">
           <p className="mb-1 font-serif text-sm text-[var(--maroon)]">{t.companion}</p>
-          {moment ? (
+          {!showGreeting ? (
+            <p className="flex h-7 items-center pl-1" role="status" aria-label={t.thinking}>
+              <span className="breath inline-block h-2 w-2 rounded-full bg-[var(--saffron)]" aria-hidden="true" />
+            </p>
+          ) : moment ? (
             <p className="leading-7">
               <span className="font-serif text-lg text-[var(--maroon)]">
                 {withName(t.greetings[moment.time].hello, profile?.name)}
@@ -383,7 +398,9 @@ export function MonkChat() {
           ) : (
             <p className="leading-7 text-[var(--muted)]">…</p>
           )}
-          <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{t.invitation}</p>
+          {showGreeting ? (
+            <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{t.invitation}</p>
+          ) : null}
         </article>
         {messages.map((message, i) => (
           <article
@@ -529,7 +546,12 @@ function stopSpeaking() {
   if (typeof window !== "undefined") window.speechSynthesis?.cancel();
 }
 
-async function speak(text: string, locale: Locale, onEnd?: () => void) {
+async function speak(
+  text: string,
+  locale: Locale,
+  onEnd?: () => void,
+  onStart?: () => void,
+) {
   const clean = text.replace(/\s*\[\d+(?:,\s*\d+)*\]/g, "").trim();
   if (!clean || typeof window === "undefined") return;
   stopSpeaking();
@@ -552,17 +574,23 @@ async function speak(text: string, locale: Locale, onEnd?: () => void) {
         };
         currentAudio = audio;
         await audio.play();
+        onStart?.();
         return;
       }
     } catch {
       /* fall back to the browser voice */
     }
   }
-  browserSpeak(clean, locale, onEnd);
+  browserSpeak(clean, locale, onEnd, onStart);
 }
 
-function browserSpeak(text: string, locale: Locale, onEnd?: () => void) {
-  if (!window.speechSynthesis) return;
+function browserSpeak(
+  text: string,
+  locale: Locale,
+  onEnd?: () => void,
+  onStart?: () => void,
+) {
+  if (!window.speechSynthesis) return onStart?.();
   const lang = SPEECH_LANG[locale];
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
@@ -578,5 +606,6 @@ function browserSpeak(text: string, locale: Locale, onEnd?: () => void) {
     voices[0] ??
     null;
   if (onEnd) utterance.onend = onEnd;
+  if (onStart) utterance.onstart = onStart;
   window.speechSynthesis.speak(utterance);
 }
