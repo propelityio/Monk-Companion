@@ -103,7 +103,6 @@ async function siteNote(messages: ChatMessage[], ctx: ChatContext): Promise<Chat
     const translated = await claude({
       model: MODELS.search,
       maxTokens: 500,
-      temperature: 0,
       system:
         "Translate the user's text faithfully into the requested language. Output only the translation, nothing else.",
       messages: [{ role: "user", content: `Language: ${ctx.locale}\n\n${reply.content}` }],
@@ -141,7 +140,6 @@ async function findPassages(
   const raw = await claude({
     model: MODELS.search,
     maxTokens: 200,
-    temperature: 0,
     system:
       "You help a Buddhist teaching companion find relevant passages in a database of teachings by Ven. Kalden (English, Spanish, Portuguese). " +
       "Read the conversation and focus on the person's LATEST message, using earlier turns only for context " +
@@ -175,7 +173,6 @@ async function groundedAnswer(
   const reply = await claude({
     model: MODELS.answer,
     maxTokens: 700,
-    temperature: 0.4,
     system: [
       COMPANION,
       "This is a two-way conversation, not a search engine. Respond to what the person just said, in the context of the conversation so far.",
@@ -249,7 +246,6 @@ async function listeningReply(messages: ChatMessage[]): Promise<ChatReply | null
   const reply = await claude({
     model: MODELS.search,
     maxTokens: 150,
-    temperature: 0.4,
     system: [
       COMPANION,
       "Write the Companion's next reply in this conversation. You have NO teachings available for this turn.",

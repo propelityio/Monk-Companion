@@ -14,7 +14,6 @@ export async function claude(opts: {
   system: string;
   messages: Message[];
   maxTokens: number;
-  temperature?: number;
 }): Promise<string> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY is not set");
@@ -31,7 +30,6 @@ export async function claude(opts: {
       system: opts.system,
       messages: opts.messages,
       max_tokens: opts.maxTokens,
-      temperature: opts.temperature ?? 0.2,
     }),
   });
 
