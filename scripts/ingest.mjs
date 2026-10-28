@@ -68,6 +68,29 @@ export function docxParagraphs(path) {
     .filter(Boolean);
 }
 
+// ---------- clean-up ----------
+// Teachers are never named on the site, so speaker labels become "Teacher:".
+// Stage directions such as [Laughter] are dropped; ">>" (auto-caption speaker
+// change) usually marks a student, so it becomes "Student:".
+const TEACHER_NAMES = (process.env.TEACHER_NAMES ?? "Kalden")
+  .split(",")
+  .map((n) => n.trim())
+  .filter(Boolean);
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const LABEL = new RegExp(
+  `(?:^|(?<=[\\s.!?]))(?:(?:Ven(?:erable)?\\.?|Geshe|Lama)\\s+)?(?:${TEACHER_NAMES.map(esc).join("|")})\\s*:`,
+  "gi",
+);
+
+export function cleanTranscript(text) {
+  return text
+    .replace(/\[(?:laughter|laughs|laughing|clears throat|music|applause|inaudible|crosstalk|silence|pause)[^\]]*\]/gi, "")
+    .replace(LABEL, "Teacher:")
+    .replace(/(^|\s)>>\s*/g, "$1Student: ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 // ---------- chunking ----------
 const TARGET_WORDS = 280;
 const words = (s) => s.split(/\s+/).filter(Boolean).length;
@@ -151,7 +174,11 @@ export function collect() {
     if (paras.length === 0) continue;
     let title = paras[0];
     if (title.length > 120) title = name.replace(/\.docx$/i, "");
-    let body = paras.slice(1).filter((p) => !/edited transcript$/i.test(p));
+    let body = paras
+      .slice(1)
+      .filter((p) => !/edited transcript$/i.test(p))
+      .map(cleanTranscript)
+      .filter(Boolean);
     const meta = describe(title);
     const prettyTitle =
       meta.series && meta.part
