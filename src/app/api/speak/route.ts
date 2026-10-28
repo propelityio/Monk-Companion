@@ -59,7 +59,7 @@ export async function POST(request: Request) {
           similarity_boost: 0.75,
           style: 0,
           use_speaker_boost: true,
-          speed: Number(process.env.ELEVENLABS_SPEED ?? 0.85), // 0.7 (slowest) to 1.2
+          speed: Number(process.env.ELEVENLABS_SPEED ?? 1.0), // 0.7 (slowest) to 1.2; 1.0 is a natural, conversational teaching pace
         },
       }),
     },
