@@ -91,7 +91,7 @@ export function MonkChat() {
   const recRef = useRef<SpeechRec | null>(null);
   const sendingRef = useRef(false);
   const greetingText = moment
-    ? `${withName(t.greetings[moment.time].hello, profile?.name)} ${t.greetings[moment.time].questions[moment.variant]}`
+    ? `${withName(t.greetings[moment.time].hello, profile?.name)} ${pick(t.greetings[moment.time].questions, moment.variant)}`
     : null;
   // Voice callbacks fire later (when speech ends or the mic hears something),
   // so they read the latest conversation and settings through this ref.
@@ -236,7 +236,7 @@ export function MonkChat() {
               ? [
                   {
                     role: "assistant" as const,
-                    content: `${withName(t.greetings[moment.time].hello, profile?.name)} ${t.greetings[moment.time].questions[moment.variant]}`,
+                    content: `${withName(t.greetings[moment.time].hello, profile?.name)} ${pick(t.greetings[moment.time].questions, moment.variant)}`,
                   },
                 ]
               : []),
@@ -498,7 +498,7 @@ export function MonkChat() {
                 />
               </span>{" "}
               <RevealText
-                text={t.greetings[moment.time].questions[moment.variant]}
+                text={pick(t.greetings[moment.time].questions, moment.variant)}
                 spoken={spokenFor("greeting")}
                 offset={withName(t.greetings[moment.time].hello, profile?.name).length + 1}
               />
@@ -651,6 +651,11 @@ export function MonkChat() {
       </form>
     </div>
   );
+}
+
+/** The visit's question for this time of day (any number of questions). */
+function pick(questions: string[], variant: number): string {
+  return questions[variant % questions.length] ?? questions[0];
 }
 
 /** "Good morning." -> "Good morning, Ana." (keeps the language's full stop). */

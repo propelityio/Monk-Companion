@@ -42,7 +42,7 @@ export function timeOfDay(hour: number): TimeOfDay {
   return "night";
 }
 
-type Greeting = { hello: string; questions: [string, string, string] };
+type Greeting = { hello: string; questions: string[] };
 
 type UiText = {
   chatTitle: string;
@@ -140,6 +140,9 @@ export const UI: Record<Locale, UiText> = {
           "How are you feeling as this day begins?",
           "What would you like to bring into today?",
           "How did you wake up this morning, in body and mind?",
+          "Before the day gets busy, how is your heart?",
+          "What is the first thing on your mind this morning?",
+          "What would make today a kind day for you?",
         ],
       },
       afternoon: {
@@ -148,6 +151,9 @@ export const UI: Record<Locale, UiText> = {
           "How is your day unfolding?",
           "What is asking for your attention right now?",
           "Take one slow breath. How are you, really?",
+          "Halfway through the day, how is your mind?",
+          "What has today asked of you so far?",
+          "Is there something you’d like to set down for a moment?",
         ],
       },
       evening: {
@@ -156,14 +162,20 @@ export const UI: Record<Locale, UiText> = {
           "How was your day? What are you carrying with you?",
           "As the day winds down, what is on your mind?",
           "What moment from today would you like to look at gently?",
+          "As the light fades, how are you, really?",
+          "What went well today, even something small?",
+          "What would you like to let go of before tonight?",
         ],
       },
       night: {
-        hello: "Good night.",
+        hello: "Good evening.",
         questions: [
           "What is keeping you awake?",
           "The world is quiet now. What is present for you?",
           "Before rest, is there something you would like to set down?",
+          "The day is done. How are you resting with it?",
+          "Is your mind still busy, or starting to settle?",
+          "What would help you feel at peace tonight?",
         ],
       },
     },
@@ -218,6 +230,9 @@ export const UI: Record<Locale, UiText> = {
           "¿Cómo te sientes al comenzar este día?",
           "¿Qué te gustaría llevar contigo hoy?",
           "¿Cómo despertaste esta mañana, en el cuerpo y en la mente?",
+          "Antes de que el día se llene, ¿cómo está tu corazón?",
+          "¿Qué es lo primero que hay en tu mente esta mañana?",
+          "¿Qué haría de hoy un día amable para ti?",
         ],
       },
       afternoon: {
@@ -226,6 +241,9 @@ export const UI: Record<Locale, UiText> = {
           "¿Cómo va tu día?",
           "¿Qué está pidiendo tu atención ahora mismo?",
           "Haz una respiración lenta. ¿Cómo estás, de verdad?",
+          "A mitad del día, ¿cómo está tu mente?",
+          "¿Qué te ha pedido el día hasta ahora?",
+          "¿Hay algo que te gustaría soltar por un momento?",
         ],
       },
       evening: {
@@ -234,6 +252,9 @@ export const UI: Record<Locale, UiText> = {
           "¿Cómo fue tu día? ¿Qué llevas contigo?",
           "Ahora que el día termina, ¿qué hay en tu mente?",
           "¿Qué momento de hoy te gustaría mirar con suavidad?",
+          "Mientras se apaga la luz, ¿cómo estás, de verdad?",
+          "¿Qué salió bien hoy, aunque sea algo pequeño?",
+          "¿Qué te gustaría soltar antes de esta noche?",
         ],
       },
       night: {
@@ -242,6 +263,9 @@ export const UI: Record<Locale, UiText> = {
           "¿Qué te mantiene despierto?",
           "El mundo está en silencio. ¿Qué está presente para ti?",
           "Antes de descansar, ¿hay algo que quieras soltar?",
+          "El día ha terminado. ¿Cómo descansas con él?",
+          "¿Tu mente sigue ocupada o empieza a calmarse?",
+          "¿Qué te ayudaría a sentir paz esta noche?",
         ],
       },
     },
@@ -296,6 +320,9 @@ export const UI: Record<Locale, UiText> = {
           "Como você está se sentindo neste começo de dia?",
           "O que você gostaria de levar para o dia de hoje?",
           "Como você acordou esta manhã, no corpo e na mente?",
+          "Antes que o dia fique cheio, como está o seu coração?",
+          "Qual é a primeira coisa na sua mente esta manhã?",
+          "O que tornaria o dia de hoje gentil para você?",
         ],
       },
       afternoon: {
@@ -304,6 +331,9 @@ export const UI: Record<Locale, UiText> = {
           "Como está sendo o seu dia?",
           "O que está pedindo a sua atenção agora?",
           "Respire devagar uma vez. Como você está, de verdade?",
+          "No meio do dia, como está a sua mente?",
+          "O que o dia de hoje já pediu de você?",
+          "Há algo que você gostaria de deixar de lado por um momento?",
         ],
       },
       evening: {
@@ -312,6 +342,9 @@ export const UI: Record<Locale, UiText> = {
           "Como foi o seu dia? O que você está carregando?",
           "Agora que o dia termina, o que está na sua mente?",
           "Que momento de hoje você gostaria de olhar com gentileza?",
+          "Enquanto a luz se vai, como você está, de verdade?",
+          "O que deu certo hoje, mesmo algo pequeno?",
+          "O que você gostaria de soltar antes desta noite?",
         ],
       },
       night: {
@@ -320,6 +353,9 @@ export const UI: Record<Locale, UiText> = {
           "O que está mantendo você acordado?",
           "O mundo está em silêncio. O que está presente para você?",
           "Antes de descansar, há algo que você gostaria de deixar de lado?",
+          "O dia terminou. Como você está descansando com ele?",
+          "Sua mente ainda está agitada ou começando a se acalmar?",
+          "O que ajudaria você a sentir paz esta noite?",
         ],
       },
     },
@@ -374,6 +410,9 @@ export const UI: Record<Locale, UiText> = {
           "Comment vous sentez-vous en ce début de journée ?",
           "Qu’aimeriez-vous apporter à cette journée ?",
           "Comment vous êtes-vous réveillé ce matin, dans le corps et l’esprit ?",
+          "Avant que la journée ne s’emballe, comment va votre cœur ?",
+          "Quelle est la première chose qui vous vient à l’esprit ce matin ?",
+          "Qu’est-ce qui ferait d’aujourd’hui une journée douce pour vous ?",
         ],
       },
       afternoon: {
@@ -382,6 +421,9 @@ export const UI: Record<Locale, UiText> = {
           "Comment se déroule votre journée ?",
           "Qu’est-ce qui demande votre attention en ce moment ?",
           "Prenez une respiration lente. Comment allez-vous, vraiment ?",
+          "À mi-journée, comment va votre esprit ?",
+          "Qu’est-ce que la journée vous a demandé jusqu’ici ?",
+          "Y a-t-il quelque chose que vous aimeriez poser un instant ?",
         ],
       },
       evening: {
@@ -390,6 +432,9 @@ export const UI: Record<Locale, UiText> = {
           "Comment s’est passée votre journée ? Que portez-vous avec vous ?",
           "Alors que la journée s’achève, qu’avez-vous à l’esprit ?",
           "Quel moment d’aujourd’hui aimeriez-vous regarder avec douceur ?",
+          "Alors que la lumière décline, comment allez-vous, vraiment ?",
+          "Qu’est-ce qui s’est bien passé aujourd’hui, même une petite chose ?",
+          "De quoi aimeriez-vous vous délester avant ce soir ?",
         ],
       },
       night: {
@@ -398,6 +443,9 @@ export const UI: Record<Locale, UiText> = {
           "Qu’est-ce qui vous tient éveillé ?",
           "Le monde est calme maintenant. Qu’est-ce qui est présent pour vous ?",
           "Avant de vous reposer, y a-t-il quelque chose que vous aimeriez déposer ?",
+          "La journée est finie. Comment vous reposez-vous avec elle ?",
+          "Votre esprit est-il encore agité, ou commence-t-il à se poser ?",
+          "Qu’est-ce qui vous aiderait à trouver la paix ce soir ?",
         ],
       },
     },
@@ -452,6 +500,9 @@ export const UI: Record<Locale, UiText> = {
           "Wie fühlen Sie sich zu Beginn dieses Tages?",
           "Was möchten Sie in den heutigen Tag mitnehmen?",
           "Wie sind Sie heute aufgewacht, in Körper und Geist?",
+          "Bevor der Tag voll wird: Wie geht es Ihrem Herzen?",
+          "Was ist heute Morgen das Erste in Ihren Gedanken?",
+          "Was würde den heutigen Tag zu einem freundlichen Tag für Sie machen?",
         ],
       },
       afternoon: {
@@ -460,6 +511,9 @@ export const UI: Record<Locale, UiText> = {
           "Wie verläuft Ihr Tag?",
           "Was verlangt gerade Ihre Aufmerksamkeit?",
           "Nehmen Sie einen langsamen Atemzug. Wie geht es Ihnen wirklich?",
+          "Zur Mitte des Tages: Wie geht es Ihrem Geist?",
+          "Was hat der Tag bisher von Ihnen verlangt?",
+          "Gibt es etwas, das Sie für einen Moment ablegen möchten?",
         ],
       },
       evening: {
@@ -468,14 +522,20 @@ export const UI: Record<Locale, UiText> = {
           "Wie war Ihr Tag? Was tragen Sie mit sich?",
           "Der Tag geht zu Ende. Was beschäftigt Sie?",
           "Welchen Moment von heute möchten Sie behutsam betrachten?",
+          "Während das Licht schwindet: Wie geht es Ihnen wirklich?",
+          "Was ist heute gut gelaufen, auch wenn es etwas Kleines war?",
+          "Was möchten Sie vor der Nacht loslassen?",
         ],
       },
       night: {
-        hello: "Gute Nacht.",
+        hello: "Guten Abend.",
         questions: [
           "Was hält Sie wach?",
           "Die Welt ist jetzt still. Was ist für Sie gerade da?",
           "Gibt es vor dem Ruhen etwas, das Sie ablegen möchten?",
+          "Der Tag ist vorbei. Wie ruhen Sie mit ihm?",
+          "Ist Ihr Geist noch unruhig, oder kommt er langsam zur Ruhe?",
+          "Was würde Ihnen helfen, heute Nacht Frieden zu finden?",
         ],
       },
     },
@@ -530,6 +590,9 @@ export const UI: Record<Locale, UiText> = {
           "Come ti senti all’inizio di questa giornata?",
           "Che cosa vorresti portare con te oggi?",
           "Come ti sei svegliato stamattina, nel corpo e nella mente?",
+          "Prima che la giornata si riempia, come sta il tuo cuore?",
+          "Qual è la prima cosa nella tua mente stamattina?",
+          "Che cosa renderebbe oggi una giornata gentile per te?",
         ],
       },
       afternoon: {
@@ -538,6 +601,9 @@ export const UI: Record<Locale, UiText> = {
           "Come sta andando la tua giornata?",
           "Che cosa chiede la tua attenzione in questo momento?",
           "Fai un respiro lento. Come stai, davvero?",
+          "A metà giornata, come sta la tua mente?",
+          "Che cosa ti ha chiesto la giornata finora?",
+          "C’è qualcosa che vorresti posare per un momento?",
         ],
       },
       evening: {
@@ -546,14 +612,20 @@ export const UI: Record<Locale, UiText> = {
           "Com’è stata la tua giornata? Che cosa porti con te?",
           "Ora che la giornata finisce, che cosa hai in mente?",
           "Quale momento di oggi vorresti guardare con gentilezza?",
+          "Mentre la luce cala, come stai, davvero?",
+          "Che cosa è andato bene oggi, anche una piccola cosa?",
+          "Che cosa vorresti lasciar andare prima di stanotte?",
         ],
       },
       night: {
-        hello: "Buonanotte.",
+        hello: "Buonasera.",
         questions: [
           "Che cosa ti tiene sveglio?",
           "Il mondo ora è silenzioso. Che cosa è presente per te?",
           "Prima di riposare, c’è qualcosa che vorresti lasciare andare?",
+          "La giornata è finita. Come riposi con lei?",
+          "La tua mente è ancora occupata, o comincia a calmarsi?",
+          "Che cosa ti aiuterebbe a sentirti in pace stanotte?",
         ],
       },
     },
@@ -603,19 +675,19 @@ export const UI: Record<Locale, UiText> = {
     greetings: {
       morning: {
         hello: "早上好。",
-        questions: ["新的一天开始了，你感觉如何？", "今天你想带着什么心意出发？", "今早醒来，你的身心状态怎样？"],
+        questions: ["新的一天开始了，你感觉如何？", "今天你想带着什么心意出发？", "今早醒来，你的身心状态怎样？", "在一天忙碌起来之前，你的心怎么样？", "今早你心里想到的第一件事是什么？", "什么能让今天成为温柔的一天？"],
       },
       afternoon: {
         hello: "下午好。",
-        questions: ["你今天过得怎么样？", "此刻有什么在召唤你的注意？", "慢慢吸一口气。你真正的状态如何？"],
+        questions: ["你今天过得怎么样？", "此刻有什么在召唤你的注意？", "慢慢吸一口气。你真正的状态如何？", "一天过半，你的心怎么样？", "今天到目前为止，对你提出了什么要求？", "有什么你想暂时放下的吗？"],
       },
       evening: {
         hello: "晚上好。",
-        questions: ["今天过得如何？你心里还装着什么？", "一天将尽，你在想些什么？", "今天有哪个时刻，你想温柔地回看？"],
+        questions: ["今天过得如何？你心里还装着什么？", "一天将尽，你在想些什么？", "今天有哪个时刻，你想温柔地回看？", "天色渐暗，你真正的状态如何？", "今天有什么顺利的事，哪怕很小？", "在今晚之前，你想放下些什么？"],
       },
       night: {
         hello: "夜深了。",
-        questions: ["是什么让你还醒着？", "世界已安静下来。此刻你心中有什么？", "休息之前，有什么想放下的吗？"],
+        questions: ["是什么让你还醒着？", "世界已安静下来。此刻你心中有什么？", "休息之前，有什么想放下的吗？", "一天结束了。你和它相处得如何？", "你的心还在忙碌，还是开始平静下来？", "什么能帮你今晚感到安宁？"],
       },
     },
   },
@@ -664,19 +736,19 @@ export const UI: Record<Locale, UiText> = {
     greetings: {
       morning: {
         hello: "おはようございます。",
-        questions: ["一日の始まりに、どんな気持ちですか？", "今日はどんな心で過ごしたいですか？", "今朝は、からだと心の具合はいかがですか？"],
+        questions: ["一日の始まりに、どんな気持ちですか？", "今日はどんな心で過ごしたいですか？", "今朝は、からだと心の具合はいかがですか？", "一日が慌ただしくなる前に、心の具合はいかがですか？", "今朝、まず心に浮かんだことは何ですか？", "今日をやさしい一日にするには、何があるといいでしょう？"],
       },
       afternoon: {
         hello: "こんにちは。",
-        questions: ["今日はどんな一日になっていますか？", "今、何があなたの注意を求めていますか？", "ゆっくり一呼吸してみましょう。本当のところ、いかがですか？"],
+        questions: ["今日はどんな一日になっていますか？", "今、何があなたの注意を求めていますか？", "ゆっくり一呼吸してみましょう。本当のところ、いかがですか？", "一日の半ばです。心の具合はいかがですか？", "今日はここまで、あなたに何を求めてきましたか？", "少しのあいだ下ろしておきたいものはありますか？"],
       },
       evening: {
         hello: "こんばんは。",
-        questions: ["今日はどんな一日でしたか？何を抱えていますか？", "一日が終わろうとしています。心に何がありますか？", "今日のどの瞬間を、やさしく振り返ってみたいですか？"],
+        questions: ["今日はどんな一日でしたか？何を抱えていますか？", "一日が終わろうとしています。心に何がありますか？", "今日のどの瞬間を、やさしく振り返ってみたいですか？", "光が薄れていく中で、本当のところ、いかがですか？", "今日うまくいったことは何ですか？小さなことでも。", "今夜までに手放したいものは何ですか？"],
       },
       night: {
         hello: "夜も更けましたね。",
-        questions: ["何があなたを眠らせずにいるのでしょう？", "世界は静かになりました。今、あなたの中に何がありますか？", "休む前に、手放したいことはありますか？"],
+        questions: ["何があなたを眠らせずにいるのでしょう？", "世界は静かになりました。今、あなたの中に何がありますか？", "休む前に、手放したいことはありますか？", "一日が終わりました。どんなふうに休んでいますか？", "心はまだ忙しいですか、それとも落ち着いてきましたか？", "今夜、安らぎを感じるには何が助けになりそうですか？"],
       },
     },
   },

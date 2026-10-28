@@ -46,13 +46,41 @@ export function useLocale(): Locale {
 
 type GreetingMoment = { time: TimeOfDay; variant: number } | null;
 let lastMoment: GreetingMoment = null;
+const GREETING_KEY = "monk-companion-greeting";
+let greetingSeed: number | null = null;
+
+/** A number picked once per visit, so the greeting stays the same all visit. */
+function visitSeed(): number {
+  if (greetingSeed !== null) return greetingSeed;
+  try {
+    const saved = window.sessionStorage.getItem(GREETING_KEY);
+    if (saved !== null) return (greetingSeed = Number(saved) || 0);
+  } catch {
+    /* storage unavailable */
+  }
+  greetingSeed = Math.floor(Math.random() * 1000);
+  try {
+    window.sessionStorage.setItem(GREETING_KEY, String(greetingSeed));
+  } catch {
+    /* storage unavailable */
+  }
+  return greetingSeed;
+}
+
+/** Move on to a different greeting (e.g. when starting a fresh conversation). */
+export function nextGreeting(): void {
+  greetingSeed = visitSeed() + 1;
+  try {
+    window.sessionStorage.setItem(GREETING_KEY, String(greetingSeed));
+  } catch {
+    /* storage unavailable */
+  }
+}
 
 function readMoment(): GreetingMoment {
-  const now = new Date();
-  const time = timeOfDay(now.getHours());
-  // Same question all day long; a different one on different days.
-  const day = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
-  const variant = day % 3;
+  const time = timeOfDay(new Date().getHours());
+  // Each time of day has several questions; the visit picks one of them.
+  const variant = visitSeed();
   if (!lastMoment || lastMoment.time !== time || lastMoment.variant !== variant) {
     lastMoment = { time, variant };
   }

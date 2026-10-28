@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { nextGreeting } from "./use-prefs";
 
 // A counter for "start a fresh conversation". The chat is keyed on it, so
 // bumping it clears the conversation even if the chat page is being kept
@@ -10,6 +11,7 @@ const listeners = new Set<() => void>();
 
 export function startFreshConversation() {
   session++;
+  nextGreeting();
   listeners.forEach((fn) => fn());
 }
 
