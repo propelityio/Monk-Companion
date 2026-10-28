@@ -4,7 +4,19 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import type { ChatCitation, ChatMessage } from "@/lib/chat";
 import { LOCALE_NAMES, LOCALES, SPEECH_LANG, UI, toLocale, type Locale } from "@/lib/i18n";
 import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib/profile";
-import { detectRegion, setLocale, useGreetingMoment, useLocale } from "@/lib/use-prefs";
+import { clearBell, justRangBell } from "@/lib/bell";
+import {
+  detectRegion,
+  getReplyMode,
+  setHandsFree,
+  setLocale,
+  setReplyMode,
+  useGreetingMoment,
+  useHandsFree,
+  useLocale,
+  useReplyMode,
+  type ReplyMode,
+} from "@/lib/use-prefs";
 import { CrisisNote } from "./crisis-note";
 
 type SpeechRec = {
@@ -34,11 +46,45 @@ export function MonkChat() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
-  const [speakReplies, setSpeakReplies] = useState(true);
+  const mode = useReplyMode();
+  const handsFree = useHandsFree();
+  const [shownText, setShownText] = useState<Set<number>>(() => new Set());
   const [profile, setProfile] = useState<GuestProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState<GuestProfile>({ name: "", email: "", intention: "" });
   const recRef = useRef<SpeechRec | null>(null);
+  const greetingText = moment
+    ? `${withName(t.greetings[moment.time].hello, profile?.name)} ${t.greetings[moment.time].questions[moment.variant]}`
+    : null;
+  // Voice callbacks fire later (when speech ends or the mic hears something),
+  // so they read the latest conversation and settings through this ref.
+  const latest = useRef({
+    messages,
+    send: (text: string): unknown => text,
+    startListening: () => {},
+    handsFree,
+    greetingText,
+    locale,
+  });
+  useEffect(() => {
+    latest.current = { messages, send, startListening, handsFree, greetingText, locale };
+  });
+
+  // Arriving by the bell: let it ring a moment, then the Monk greets aloud.
+  useEffect(() => {
+    if (!justRangBell() || getReplyMode() === "text") return;
+    const timer = window.setTimeout(() => {
+      if (!justRangBell(6000)) return;
+      clearBell();
+      const { greetingText: g, locale: l } = latest.current;
+      if (g) void speak(g, l, afterSpeaking);
+    }, 1800);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function afterSpeaking() {
+    if (latest.current.handsFree && getReplyMode() !== "text") latest.current.startListening();
+  }
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,7 +109,7 @@ export function MonkChat() {
     const content = text.trim();
     if (!content || busy) return;
 
-    const nextMessages: DisplayMessage[] = [...messages, { role: "user", content }];
+    const nextMessages: DisplayMessage[] = [...latest.current.messages, { role: "user", content }];
     setMessages(nextMessages);
     setInput("");
     setBusy(true);
@@ -101,7 +147,7 @@ export function MonkChat() {
         citations: data.citations,
       };
       setMessages([...nextMessages, reply]);
-      if (speakReplies) void speak(reply.content, locale);
+      if (getReplyMode() !== "text") void speak(reply.content, locale, afterSpeaking);
     } catch {
       setMessages([
         ...nextMessages,
@@ -117,29 +163,46 @@ export function MonkChat() {
     void send(input);
   }
 
-  function toggleListen() {
+  function startListening() {
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Ctor) {
       setInput((prev) => prev || t.voiceUnavailable);
       return;
     }
-    if (listening) {
-      recRef.current?.stop();
+    if (recRef.current) return;
+    stopSpeaking();
+    try {
+      const rec = new Ctor();
+      rec.lang = SPEECH_LANG[locale];
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.onresult = (event) => {
+        const transcript = event.results[0]?.[0]?.transcript ?? "";
+        if (transcript) latest.current.send(transcript);
+      };
+      rec.onend = () => {
+        recRef.current = null;
+        setListening(false);
+      };
+      recRef.current = rec;
+      rec.start();
+      setListening(true);
+    } catch {
+      // Some browsers only allow the mic after a tap; the Speak button still works.
+      recRef.current = null;
       setListening(false);
-      return;
     }
-    const rec = new Ctor();
-    rec.lang = SPEECH_LANG[locale];
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.onresult = (event) => {
-      const transcript = event.results[0]?.[0]?.transcript ?? "";
-      if (transcript) void send(transcript);
-    };
-    rec.onend = () => setListening(false);
-    recRef.current = rec;
-    rec.start();
-    setListening(true);
+  }
+
+  function stopListening() {
+    recRef.current?.stop();
+    recRef.current = null;
+    setListening(false);
+  }
+
+  function chooseMode(next: ReplyMode) {
+    if (next === "text") stopSpeaking();
+    setReplyMode(next);
   }
 
   function onSaveProfile(event: FormEvent) {
@@ -183,25 +246,49 @@ export function MonkChat() {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-2 text-[var(--muted)]">
-            <input
-              type="checkbox"
-              className="accent-[var(--maroon)]"
-              checked={speakReplies}
-              onChange={(e) => {
-                if (!e.target.checked) stopSpeaking();
-                setSpeakReplies(e.target.checked);
-              }}
-            />
-            {t.speakReplies}
-            <span
-              className="rounded-full border border-[var(--saffron)] px-1.5 py-px text-[10px] leading-4 text-[var(--maroon)]"
-              title={t.aiVoiceNote}
-            >
-              {t.aiVoice}
-            </span>
-            <span className="sr-only">{t.aiVoiceNote}</span>
-          </label>
+          <div
+            role="radiogroup"
+            aria-label={t.replies}
+            className="flex rounded-full border border-[var(--line)] p-0.5"
+          >
+            {(["text", "voice", "both"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={mode === m}
+                onClick={() => chooseMode(m)}
+                className={`rounded-full px-2.5 py-0.5 transition-colors ${
+                  mode === m
+                    ? "bg-[var(--maroon)] text-[var(--paper)]"
+                    : "text-[var(--maroon)] hover:bg-[var(--maroon-soft)]"
+                }`}
+              >
+                {m === "text" ? t.modeText : m === "voice" ? t.modeVoice : t.modeBoth}
+              </button>
+            ))}
+          </div>
+          {mode !== "text" ? (
+            <>
+              <span
+                className="rounded-full border border-[var(--saffron)] px-1.5 py-px text-[10px] leading-4 text-[var(--maroon)]"
+                title={t.aiVoiceNote}
+              >
+                {t.aiVoice}
+                <span className="sr-only"> {t.aiVoiceNote}</span>
+              </span>
+              <label className="flex items-center gap-2 text-[var(--muted)]" title={t.handsFreeNote}>
+                <input
+                  type="checkbox"
+                  className="accent-[var(--maroon)]"
+                  checked={handsFree}
+                  onChange={(e) => setHandsFree(e.target.checked)}
+                />
+                {t.handsFree}
+                <span className="sr-only"> {t.handsFreeNote}</span>
+              </label>
+            </>
+          ) : null}
           <button
             type="button"
             className="rounded-full border border-[var(--line)] px-3 py-1 text-[var(--maroon)] transition-colors hover:border-[var(--maroon)]"
@@ -307,8 +394,35 @@ export function MonkChat() {
             >
               {message.role === "user" ? t.you : t.companion}
             </p>
-            <p className="whitespace-pre-wrap leading-7">{message.content}</p>
-            {message.citations && message.citations.length > 0 ? (
+            {message.role === "assistant" && mode === "voice" && !shownText.has(i) ? (
+              <button
+                type="button"
+                onClick={() => setShownText((prev) => new Set(prev).add(i))}
+                className="flex items-center gap-2 text-sm text-[var(--muted)] underline-offset-2 hover:underline"
+              >
+                <span aria-hidden="true">🔊</span> {t.spokenReply} · {t.showText}
+              </button>
+            ) : (
+              <p className="whitespace-pre-wrap leading-7">{message.content}</p>
+            )}
+            {message.role === "assistant" && mode === "voice" && shownText.has(i) ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setShownText((prev) => {
+                    const next = new Set(prev);
+                    next.delete(i);
+                    return next;
+                  })
+                }
+                className="mt-1 text-xs text-[var(--muted)] underline-offset-2 hover:underline"
+              >
+                {t.hideText}
+              </button>
+            ) : null}
+            {message.citations &&
+            message.citations.length > 0 &&
+            !(message.role === "assistant" && mode === "voice" && !shownText.has(i)) ? (
               <ul className="mt-2 flex flex-wrap gap-2">
                 {message.citations.map((c) => {
                   const label = c.title;
@@ -361,7 +475,7 @@ export function MonkChat() {
           />
           <button
             type="button"
-            onClick={toggleListen}
+            onClick={() => (listening ? stopListening() : startListening())}
             className={`h-[52px] rounded-full border px-4 text-sm ${
               listening
                 ? "border-[var(--saffron)] bg-[var(--saffron-soft)] text-[var(--maroon)]"
@@ -406,7 +520,7 @@ function stopSpeaking() {
   if (typeof window !== "undefined") window.speechSynthesis?.cancel();
 }
 
-async function speak(text: string, locale: Locale) {
+async function speak(text: string, locale: Locale, onEnd?: () => void) {
   const clean = text.replace(/\s*\[\d+(?:,\s*\d+)*\]/g, "").trim();
   if (!clean || typeof window === "undefined") return;
   stopSpeaking();
@@ -423,7 +537,10 @@ async function speak(text: string, locale: Locale) {
         premiumVoice = true;
         const url = URL.createObjectURL(await res.blob());
         const audio = new Audio(url);
-        audio.onended = () => URL.revokeObjectURL(url);
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          onEnd?.();
+        };
         currentAudio = audio;
         await audio.play();
         return;
@@ -432,10 +549,10 @@ async function speak(text: string, locale: Locale) {
       /* fall back to the browser voice */
     }
   }
-  browserSpeak(clean, locale);
+  browserSpeak(clean, locale, onEnd);
 }
 
-function browserSpeak(text: string, locale: Locale) {
+function browserSpeak(text: string, locale: Locale, onEnd?: () => void) {
   if (!window.speechSynthesis) return;
   const lang = SPEECH_LANG[locale];
   const utterance = new SpeechSynthesisUtterance(text);
@@ -451,5 +568,6 @@ function browserSpeak(text: string, locale: Locale) {
     voices.find((v) => v.lang === lang) ??
     voices[0] ??
     null;
+  if (onEnd) utterance.onend = onEnd;
   window.speechSynthesis.speak(utterance);
 }

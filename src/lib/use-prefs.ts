@@ -78,3 +78,52 @@ export function detectRegion(): string | null {
     return null;
   }
 }
+
+// ---------- how replies are delivered ----------
+
+export type ReplyMode = "text" | "voice" | "both";
+const MODE_KEY = "monk-companion-reply-mode";
+const HANDS_FREE_KEY = "monk-companion-hands-free";
+const prefListeners = new Set<() => void>();
+const subscribePrefs = (fn: () => void) => {
+  prefListeners.add(fn);
+  return () => prefListeners.delete(fn);
+};
+
+function readStored(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* storage unavailable */
+  }
+  prefListeners.forEach((fn) => fn());
+}
+
+export function getReplyMode(): ReplyMode {
+  const v = typeof window === "undefined" ? null : readStored(MODE_KEY);
+  return v === "text" || v === "voice" || v === "both" ? v : "both";
+}
+
+export function setReplyMode(mode: ReplyMode) {
+  writeStored(MODE_KEY, mode);
+}
+
+export function useReplyMode(): ReplyMode {
+  return useSyncExternalStore(subscribePrefs, getReplyMode, () => "both");
+}
+
+export function useHandsFree(): boolean {
+  return useSyncExternalStore(subscribePrefs, () => readStored(HANDS_FREE_KEY) === "1", () => false);
+}
+
+export function setHandsFree(on: boolean) {
+  writeStored(HANDS_FREE_KEY, on ? "1" : "0");
+}

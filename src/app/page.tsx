@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { CrisisNote } from "@/components/crisis-note";
 import { LotusMark } from "@/components/lotus-mark";
+import { OpenChatLink } from "@/components/open-chat-link";
 import { SiteHeader } from "@/components/site-header";
 
 export default function Home() {
@@ -19,12 +19,11 @@ export default function Home() {
           Speak or write. No subscription. No login to begin.
         </p>
         <div className="mt-10 flex flex-wrap gap-3">
-          <Link
-            href="/chat"
+          <OpenChatLink
             className="rounded-full bg-[var(--maroon)] px-6 py-3 text-[var(--paper)] transition-colors hover:bg-[var(--maroon-deep)]"
           >
             Open Monk Chat
-          </Link>
+          </OpenChatLink>
           <a
             href="#how"
             className="rounded-full border border-[var(--line)] px-6 py-3 text-[var(--maroon)] transition-colors hover:border-[var(--maroon)]"
