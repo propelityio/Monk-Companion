@@ -36,15 +36,18 @@ body {
   height: 100%;
 }
 
-::selection {
-  background: var(--saffron-soft);
-  color: var(--ink);
-}
+/* In the base layer so component utilities (e.g. the message box) can override. */
+@layer base {
+  ::selection {
+    background: var(--saffron-soft);
+    color: var(--ink);
+  }
 
-:focus-visible {
-  outline: 2px solid var(--saffron);
-  outline-offset: 2px;
-  border-radius: 6px;
+  :focus-visible {
+    outline: 2px solid var(--saffron);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
 }
 
 /* A slow in-and-out, roughly the pace of a calm breath. */

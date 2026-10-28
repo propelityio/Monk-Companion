@@ -185,6 +185,7 @@ export function MonkChat() {
           <label className="flex items-center gap-2 text-[var(--muted)]">
             <input
               type="checkbox"
+              className="accent-[var(--maroon)]"
               checked={speakReplies}
               onChange={(e) => {
                 if (!e.target.checked) stopSpeaking();
