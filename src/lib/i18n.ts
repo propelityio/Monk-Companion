@@ -613,6 +613,21 @@ export function regionFromTimeZone(tz: string | null | undefined): string | null
   return map[tz] ?? null;
 }
 
+export const CRISIS_COUNTRY: Record<string, string> = {
+  US: "the United States",
+  CA: "Canada",
+  GB: "the United Kingdom",
+  IE: "Ireland",
+  FR: "France",
+  ES: "Spain",
+  BR: "Brazil",
+  DE: "Germany",
+};
+
+export function crisisLine(region: string | null | undefined): string | null {
+  return region ? (CRISIS_LINES[region.toUpperCase()] ?? null) : null;
+}
+
 const CRISIS_LINES: Record<string, string> = {
   US: "988",
   CA: "988",

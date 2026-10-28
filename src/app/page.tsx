@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CrisisNote } from "@/components/crisis-note";
 import { SiteHeader } from "@/components/site-header";
 
 export default function Home() {
@@ -13,7 +14,7 @@ export default function Home() {
           Monk Companion
         </h1>
         <p className="mt-6 max-w-xl text-lg leading-8 text-[var(--muted)]">
-          An authentic companion grounded in Kalden’s teachings. Speak or write.
+          An authentic companion grounded in Buddhist teachings. Speak or write.
           No subscription. No login to begin.
         </p>
         <div className="mt-10 flex flex-wrap gap-3">
@@ -62,8 +63,7 @@ export default function Home() {
         </section>
       </main>
       <footer className="border-t border-[var(--line)] px-6 py-6 text-sm text-[var(--muted)]">
-        Not therapy or medical advice. If you are in crisis in the United
-        States, call or text 988.
+        <CrisisNote />
       </footer>
     </div>
   );
