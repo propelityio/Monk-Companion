@@ -728,7 +728,7 @@ function browserSpeak(text: string, locale: Locale, hooks: SpeakHooks) {
   const lang = SPEECH_LANG[locale];
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
-  utterance.rate = 0.95; // natural, conversational
+  utterance.rate = 0.9; // calm but conversational
   utterance.pitch = 0.85; // a little lower and softer
   const voices = window.speechSynthesis.getVoices().filter((v) =>
     v.lang.toLowerCase().startsWith(locale),

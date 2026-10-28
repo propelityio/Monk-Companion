@@ -7,6 +7,10 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 30;
 
+// 0.7 (slowest) to 1.2. Measured with the current voice: 0.8 ≈ 130, 0.85 ≈ 138,
+// 0.9 ≈ 148, 1.0 ≈ 160–170 words per minute. 0.9 is calm but conversational.
+const SPEED = Number(process.env.ELEVENLABS_SPEED ?? 0.9);
+
 const MAX_CHARS = 1500; // a full reply is usually 600–1,200 characters
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_PER_WINDOW = 40;
@@ -29,9 +33,14 @@ export async function POST(request: Request) {
   }
 
   let text = "";
+  let speed = SPEED;
   try {
-    const body = (await request.json()) as { text?: unknown };
+    const body = (await request.json()) as { text?: unknown; speed?: unknown };
     text = typeof body?.text === "string" ? body.text : "";
+    // Local testing only: try other speeds without redeploying.
+    if (process.env.NODE_ENV === "development" && typeof body?.speed === "number") {
+      speed = Math.min(1.2, Math.max(0.7, body.speed));
+    }
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -59,7 +68,7 @@ export async function POST(request: Request) {
           similarity_boost: 0.75,
           style: 0,
           use_speaker_boost: true,
-          speed: Number(process.env.ELEVENLABS_SPEED ?? 1.0), // 0.7 (slowest) to 1.2; 1.0 is a natural, conversational teaching pace
+          speed,
         },
       }),
     },
@@ -82,6 +91,7 @@ export async function POST(request: Request) {
       text, // exactly what was spoken; the timings line up with it
       audio: data.audio_base64,
       starts: data.alignment?.character_start_times_seconds ?? [],
+      speed,
     },
     { headers: { "Cache-Control": "no-store" } },
   );
