@@ -61,3 +61,23 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .breath { animation: none; opacity: 0.9; }
 }
+
+/* Words appearing as the Monk speaks them: a soft fade in from the left. */
+.word {
+  display: inline-block;
+}
+.word-out {
+  opacity: 0;
+  transform: translateX(-0.4em);
+}
+.word-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .word-out { transform: none; }
+  .word-in { transition: opacity 0.2s linear; }
+}

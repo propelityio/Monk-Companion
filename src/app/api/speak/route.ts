@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-// Calm voice for spoken replies via ElevenLabs.
+// Calm voice for spoken replies via ElevenLabs, with the time each character
+// is spoken, so the page can show words as they are said.
 // Turned on by setting ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID in Vercel.
 // When they are missing this returns 501 and the browser's own voice is used.
 
@@ -43,13 +44,12 @@ export async function POST(request: Request) {
   }
 
   const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}?output_format=mp3_44100_128`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}/with-timestamps?output_format=mp3_44100_128`,
     {
       method: "POST",
       headers: {
         "xi-api-key": key,
         "Content-Type": "application/json",
-        Accept: "audio/mpeg",
       },
       body: JSON.stringify({
         text,
@@ -65,12 +65,24 @@ export async function POST(request: Request) {
     },
   );
 
-  if (!res.ok || !res.body) {
+  if (!res.ok) {
     console.error("[speak] ElevenLabs error", res.status, (await res.text()).slice(0, 300));
     return NextResponse.json({ error: "voice unavailable" }, { status: 502 });
   }
 
-  return new Response(res.body, {
-    headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
-  });
+  const data = (await res.json()) as {
+    audio_base64?: string;
+    alignment?: { character_start_times_seconds?: number[] } | null;
+  };
+  if (!data.audio_base64) {
+    return NextResponse.json({ error: "voice unavailable" }, { status: 502 });
+  }
+  return NextResponse.json(
+    {
+      text, // exactly what was spoken; the timings line up with it
+      audio: data.audio_base64,
+      starts: data.alignment?.character_start_times_seconds ?? [],
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

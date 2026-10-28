@@ -18,6 +18,7 @@ import {
   type ReplyMode,
 } from "@/lib/use-prefs";
 import { CrisisNote } from "./crisis-note";
+import { RevealText } from "./reveal-text";
 
 type SpeechRec = {
   lang: string;
@@ -55,6 +56,31 @@ export function MonkChat() {
     () => typeof window !== "undefined" && justRangBell() && getReplyMode() !== "text",
   );
   const showGreeting = !greetingPending || mode === "text";
+  // Which text is being spoken right now, and how many characters have been said.
+  const [reveal, setReveal] = useState<{ key: string; chars: number } | null>(null);
+  const spokenFor = (key: string) => (reveal && reveal.key === key ? reveal.chars : undefined);
+  /** Speech hooks that reveal `key`'s text as it is spoken. */
+  function revealing(key: string, then?: () => void) {
+    let started = false;
+    // If the voice never starts, show the words anyway.
+    const safety = window.setTimeout(() => {
+      if (!started) setReveal((r) => (r?.key === key ? null : r));
+    }, 8000);
+    return {
+      onStart: () => {
+        started = true;
+        window.clearTimeout(safety);
+        setReveal({ key, chars: 0 });
+      },
+      onProgress: (chars: number) =>
+        setReveal((r) => (r?.key === key ? { key, chars } : r)),
+      onEnd: () => {
+        window.clearTimeout(safety);
+        setReveal((r) => (r?.key === key ? null : r));
+        then?.();
+      },
+    };
+  }
   const [profile, setProfile] = useState<GuestProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState<GuestProfile>({ name: "", email: "", intention: "" });
@@ -91,7 +117,16 @@ export function MonkChat() {
         const { greetingText: g, locale: l } = latest.current;
         // If the voice can't start for any reason, show the words anyway.
         safety = window.setTimeout(() => setGreetingPending(false), 4000);
-        if (g) void speak(g, l, afterSpeaking, () => setGreetingPending(false));
+        if (g) {
+          const hooks = revealing("greeting", afterSpeaking);
+          void speak(g, l, {
+            ...hooks,
+            onStart: () => {
+              setGreetingPending(false);
+              hooks.onStart();
+            },
+          });
+        }
         else setGreetingPending(false);
       }, 400);
     });
@@ -130,6 +165,7 @@ export function MonkChat() {
     if (!content || busy) return;
 
     const nextMessages: DisplayMessage[] = [...latest.current.messages, { role: "user", content }];
+    setReveal(null);
     setMessages(nextMessages);
     setInput("");
     setBusy(true);
@@ -166,8 +202,13 @@ export function MonkChat() {
         content: data.content ?? t.replyFailed,
         citations: data.citations,
       };
+      const key = `m${nextMessages.length}`;
+      const replyMode = getReplyMode();
+      if (replyMode === "both") setReveal({ key, chars: 0 }); // words wait for the voice
       setMessages([...nextMessages, reply]);
-      if (getReplyMode() !== "text") void speak(reply.content, locale, afterSpeaking);
+      if (replyMode !== "text") {
+        void speak(reply.content, locale, revealing(key, afterSpeaking));
+      }
     } catch {
       setMessages([
         ...nextMessages,
@@ -222,6 +263,7 @@ export function MonkChat() {
 
   function chooseMode(next: ReplyMode) {
     if (next === "text") stopSpeaking();
+    setReveal(null);
     setReplyMode(next);
   }
 
@@ -391,9 +433,16 @@ export function MonkChat() {
           ) : moment ? (
             <p className="leading-7">
               <span className="font-serif text-lg text-[var(--maroon)]">
-                {withName(t.greetings[moment.time].hello, profile?.name)}
+                <RevealText
+                  text={withName(t.greetings[moment.time].hello, profile?.name)}
+                  spoken={spokenFor("greeting")}
+                />
               </span>{" "}
-              {t.greetings[moment.time].questions[moment.variant]}
+              <RevealText
+                text={t.greetings[moment.time].questions[moment.variant]}
+                spoken={spokenFor("greeting")}
+                offset={withName(t.greetings[moment.time].hello, profile?.name).length + 1}
+              />
             </p>
           ) : (
             <p className="leading-7 text-[var(--muted)]">…</p>
@@ -429,7 +478,12 @@ export function MonkChat() {
                 <span aria-hidden="true">🔊</span> {t.spokenReply} · {t.showText}
               </button>
             ) : (
-              <p className="whitespace-pre-wrap leading-7">{message.content}</p>
+              <p className="whitespace-pre-wrap leading-7">
+                <RevealText
+                  text={message.content}
+                  spoken={message.role === "assistant" && mode === "both" ? spokenFor(`m${i}`) : undefined}
+                />
+              </p>
             )}
             {message.role === "assistant" && mode === "voice" && shownText.has(i) ? (
               <button
@@ -448,6 +502,7 @@ export function MonkChat() {
             ) : null}
             {message.citations &&
             message.citations.length > 0 &&
+            spokenFor(`m${i}`) === undefined &&
             !(message.role === "assistant" && mode === "voice" && !shownText.has(i)) ? (
               <ul className="mt-2 flex flex-wrap gap-2">
                 {message.citations.map((c) => {
@@ -537,21 +592,40 @@ function withName(hello: string, name?: string): string {
 // Uses the calm ElevenLabs voice when the site has it configured; otherwise a
 // slower, lower version of the browser's own voice in the chosen language.
 
+type SpeakHooks = {
+  onStart?: () => void;
+  onEnd?: () => void;
+  /** How many characters of the text have been spoken so far. */
+  onProgress?: (chars: number) => void;
+};
+
 let premiumVoice: boolean | null = null; // unknown until the first try
 let currentAudio: HTMLAudioElement | null = null;
+let progressFrame = 0;
+let estimateTimer = 0;
 
 function stopSpeaking() {
+  if (typeof window === "undefined") return;
+  window.cancelAnimationFrame(progressFrame);
+  window.clearInterval(estimateTimer);
   currentAudio?.pause();
   currentAudio = null;
-  if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+  window.speechSynthesis?.cancel();
 }
 
-async function speak(
-  text: string,
-  locale: Locale,
-  onEnd?: () => void,
-  onStart?: () => void,
-) {
+/** Index of the first start time after `t` (= characters already begun). */
+function spokenCount(starts: number[], t: number): number {
+  let lo = 0;
+  let hi = starts.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (starts[mid] <= t) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+async function speak(text: string, locale: Locale, hooks: SpeakHooks = {}) {
   const clean = text.replace(/\s*\[\d+(?:,\s*\d+)*\]/g, "").trim();
   if (!clean || typeof window === "undefined") return;
   stopSpeaking();
@@ -566,31 +640,62 @@ async function speak(
       if (res.status === 501) premiumVoice = false; // not set up: stop asking
       if (res.ok) {
         premiumVoice = true;
-        const url = URL.createObjectURL(await res.blob());
+        const data = (await res.json()) as { audio: string; starts: number[] };
+        const bytes = Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0));
+        const url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
         const audio = new Audio(url);
+        const starts = data.starts ?? [];
+        // Timings are per character of what was spoken; map them onto the text.
+        const scale = starts.length ? clean.length / starts.length : 1;
+        let last = -1;
+        // Updated on every frame for smoothness, and on the player's own
+        // progress events too (frames pause when the page isn't in front).
+        const update = () => {
+          if (currentAudio !== audio) return;
+          const t = audio.currentTime + 0.05;
+          const chars = starts.length
+            ? Math.round(spokenCount(starts, t) * scale)
+            : audio.duration
+              ? Math.round((t / audio.duration) * clean.length)
+              : 0;
+          if (chars !== last) {
+            last = chars;
+            hooks.onProgress?.(chars);
+          }
+        };
+        const tick = () => {
+          update();
+          if (currentAudio === audio && !audio.paused && !audio.ended) {
+            progressFrame = window.requestAnimationFrame(tick);
+          }
+        };
+        audio.ontimeupdate = update;
+        audio.onplay = () => {
+          hooks.onStart?.();
+          progressFrame = window.requestAnimationFrame(tick);
+        };
         audio.onended = () => {
           URL.revokeObjectURL(url);
-          onEnd?.();
+          hooks.onProgress?.(clean.length);
+          hooks.onEnd?.();
         };
         currentAudio = audio;
         await audio.play();
-        onStart?.();
         return;
       }
     } catch {
       /* fall back to the browser voice */
     }
   }
-  browserSpeak(clean, locale, onEnd, onStart);
+  browserSpeak(clean, locale, hooks);
 }
 
-function browserSpeak(
-  text: string,
-  locale: Locale,
-  onEnd?: () => void,
-  onStart?: () => void,
-) {
-  if (!window.speechSynthesis) return onStart?.();
+function browserSpeak(text: string, locale: Locale, hooks: SpeakHooks) {
+  if (!window.speechSynthesis) {
+    hooks.onStart?.();
+    hooks.onProgress?.(text.length);
+    return;
+  }
   const lang = SPEECH_LANG[locale];
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
@@ -605,7 +710,25 @@ function browserSpeak(
     voices.find((v) => v.lang === lang) ??
     voices[0] ??
     null;
-  if (onEnd) utterance.onend = onEnd;
-  if (onStart) utterance.onstart = onStart;
+
+  // Most voices report each word as they reach it; if one doesn't, follow an
+  // estimated speaking pace instead.
+  let reported = false;
+  utterance.onboundary = (e) => {
+    reported = true;
+    hooks.onProgress?.(e.charIndex + (e.charLength || 1));
+  };
+  utterance.onstart = () => {
+    hooks.onStart?.();
+    const began = Date.now();
+    estimateTimer = window.setInterval(() => {
+      if (!reported) hooks.onProgress?.(Math.round(((Date.now() - began) / 1000) * 12));
+    }, 120);
+  };
+  utterance.onend = () => {
+    window.clearInterval(estimateTimer);
+    hooks.onProgress?.(text.length);
+    hooks.onEnd?.();
+  };
   window.speechSynthesis.speak(utterance);
 }
