@@ -1,7 +1,7 @@
 # Knowledge sources
 
 Official teachings for Monk Companion belong here after the monk and
-Awaythroughfoundation grant a written license.
+A Way Through Foundation grant a written license.
 
 Expected layout:
 

@@ -18,7 +18,7 @@ export const KNOWLEDGE_CHUNKS: KnowledgeChunk[] = [
     id: "foundation-welcome",
     title: "How this companion works",
     sourceType: "foundation",
-    text: "Monk Companion is offered by Awaythroughfoundation. You may speak or type freely with no account. Answers rest on recorded and written Buddhist teachings from monks and teachers. When no teaching speaks to a question, the companion says so instead of inventing one.",
+    text: "Monk Companion is offered by A Way Through Foundation. You may speak or type freely with no account. Answers rest on recorded and written Buddhist teachings from monks and teachers. When no teaching speaks to a question, the companion says so instead of inventing one.",
     tags: ["welcome", "about", "guest", "account"],
   },
   {

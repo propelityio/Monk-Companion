@@ -1,6 +1,6 @@
 # Monk Companion (Kalden the Monk)
 
-Website for [Awaythroughfoundation](https://github.com/propelityio/kaldenthemonk): a guest-first companion grounded in Kalden’s teachings.
+Website for [A Way Through Foundation](https://github.com/propelityio/kaldenthemonk): a guest-first companion grounded in Kalden’s teachings.
 
 - **Product:** Monk Companion
 - **Conversation UI:** Monk Chat (`/chat`)

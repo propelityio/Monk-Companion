@@ -9,7 +9,7 @@ export function SiteHeader() {
         <LotusMark className="h-8 w-8 text-[var(--saffron)]" />
         <span className="flex flex-col leading-tight">
           <span className="font-serif text-lg text-[var(--maroon)]">Monk Companion</span>
-          <span className="text-xs text-[var(--muted)]">Awaythroughfoundation</span>
+          <span className="text-xs text-[var(--muted)]">A Way Through Foundation</span>
         </span>
       </Link>
       <nav className="flex items-center gap-4 text-sm">

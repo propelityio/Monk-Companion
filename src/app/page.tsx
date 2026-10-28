@@ -12,7 +12,7 @@ export default function Home() {
         <h1 className="mt-6 font-serif text-5xl leading-[1.05] text-[var(--maroon)] sm:text-6xl">
           Monk Companion
         </h1>
-        <p className="mt-3 text-sm text-[var(--muted)]">from Awaythroughfoundation</p>
+        <p className="mt-3 text-sm text-[var(--muted)]">from A Way Through Foundation</p>
         <p className="mt-8 max-w-xl text-lg leading-8 text-[var(--ink)]">
           An authentic companion grounded in Buddhist teachings.
         </p>

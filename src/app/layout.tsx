@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s · Monk Companion",
   },
   description:
-    "An authentic companion from Awaythroughfoundation, grounded in Buddhist teachings. Speak or chat with no login required.",
+    "An authentic companion from A Way Through Foundation, grounded in Buddhist teachings. Speak or chat with no login required.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
