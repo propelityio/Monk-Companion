@@ -158,7 +158,7 @@ export function MonkChat() {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-3 text-sm">
         <div>
-          <p className="font-medium">{t.chatTitle}</p>
+          <p className="font-serif text-base text-[var(--maroon)]">{t.chatTitle}</p>
           <p className="text-[var(--muted)]">
             {profile ? t.curatedFor(profile.name) : t.guest}
           </p>
@@ -195,7 +195,7 @@ export function MonkChat() {
           </label>
           <button
             type="button"
-            className="rounded-full border border-[var(--line)] px-3 py-1 hover:bg-[var(--paper-strong)]"
+            className="rounded-full border border-[var(--line)] px-3 py-1 text-[var(--maroon)] transition-colors hover:border-[var(--maroon)]"
             onClick={() => setShowProfile((v) => !v)}
           >
             {profile ? t.path : t.curatedPath}
@@ -244,7 +244,7 @@ export function MonkChat() {
           <div className="mt-3 flex gap-3">
             <button
               type="submit"
-              className="rounded-full bg-[var(--ink)] px-4 py-2 text-sm text-[var(--paper)]"
+              className="rounded-full bg-[var(--maroon)] px-4 py-2 text-sm text-[var(--paper)] transition-colors hover:bg-[var(--maroon-deep)]"
             >
               {t.save}
             </button>
@@ -266,11 +266,11 @@ export function MonkChat() {
       ) : null}
 
       <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-6">
-        <article className="mr-8 sm:mr-24">
-          <p className="mb-1 text-xs uppercase tracking-wide text-[var(--muted)]">{t.companion}</p>
+        <article className="mr-8 border-l-2 border-[var(--saffron-soft)] pl-4 sm:mr-24">
+          <p className="mb-1 font-serif text-sm text-[var(--maroon)]">{t.companion}</p>
           {moment ? (
             <p className="leading-7">
-              <span className="font-medium">
+              <span className="font-serif text-lg text-[var(--maroon)]">
                 {withName(t.greetings[moment.time].hello, profile?.name)}
               </span>{" "}
               {t.greetings[moment.time].questions[moment.variant]}
@@ -283,9 +283,19 @@ export function MonkChat() {
         {messages.map((message, i) => (
           <article
             key={`${message.role}-${i}`}
-            className={message.role === "user" ? "ml-8 sm:ml-24" : "mr-8 sm:mr-24"}
+            className={
+              message.role === "user"
+                ? "ml-10 rounded-2xl rounded-br-md bg-[var(--maroon-soft)] px-4 py-3 sm:ml-28"
+                : "mr-8 border-l-2 border-[var(--saffron-soft)] pl-4 sm:mr-24"
+            }
           >
-            <p className="mb-1 text-xs uppercase tracking-wide text-[var(--muted)]">
+            <p
+              className={
+                message.role === "user"
+                  ? "mb-1 text-xs text-[var(--muted)]"
+                  : "mb-1 font-serif text-sm text-[var(--maroon)]"
+              }
+            >
               {message.role === "user" ? t.you : t.companion}
             </p>
             <p className="whitespace-pre-wrap leading-7">{message.content}</p>
@@ -297,7 +307,7 @@ export function MonkChat() {
                   return (
                     <li
                       key={c.id}
-                      className="rounded-full border border-[var(--line)] px-2 py-0.5 text-xs text-[var(--muted)]"
+                      className="rounded-full bg-[var(--saffron-soft)] px-2.5 py-0.5 text-xs text-[var(--maroon)]"
                     >
                       {c.url ? (
                         <a
@@ -318,13 +328,18 @@ export function MonkChat() {
             ) : null}
           </article>
         ))}
-        {busy ? <p className="text-sm text-[var(--muted)]">{t.thinking}</p> : null}
+        {busy ? (
+          <p className="flex items-center gap-3 pl-4 text-sm text-[var(--muted)]" role="status">
+            <span className="breath inline-block h-2 w-2 rounded-full bg-[var(--saffron)]" aria-hidden="true" />
+            {t.thinking}
+          </p>
+        ) : null}
       </div>
 
       <form onSubmit={onSubmit} className="border-t border-[var(--line)] px-5 py-4">
         <div className="flex items-end gap-2">
           <textarea
-            className="min-h-[52px] flex-1 resize-none rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-3"
+            className="min-h-[52px] flex-1 resize-none rounded-2xl border border-[var(--line)] bg-white/60 px-4 py-3 transition-colors focus:border-[var(--saffron)] focus:outline-none"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -341,8 +356,8 @@ export function MonkChat() {
             onClick={toggleListen}
             className={`h-[52px] rounded-full border px-4 text-sm ${
               listening
-                ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--paper)]"
-                : "border-[var(--line)]"
+                ? "border-[var(--saffron)] bg-[var(--saffron-soft)] text-[var(--maroon)]"
+                : "border-[var(--line)] text-[var(--maroon)] hover:border-[var(--maroon)]"
             }`}
           >
             {listening ? t.stop : t.speak}
@@ -350,7 +365,7 @@ export function MonkChat() {
           <button
             type="submit"
             disabled={busy}
-            className="h-[52px] rounded-full bg-[var(--ink)] px-5 text-sm text-[var(--paper)] disabled:opacity-50"
+            className="h-[52px] rounded-full bg-[var(--maroon)] px-5 text-sm text-[var(--paper)] transition-colors hover:bg-[var(--maroon-deep)] disabled:opacity-50"
           >
             {t.send}
           </button>

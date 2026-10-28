@@ -1,11 +1,20 @@
 @import "tailwindcss";
 
+/*
+  Palette drawn from Tibetan monastic life, used quietly:
+  robe maroon for identity, saffron only as an accent, on lokta-paper white.
+*/
 :root {
-  --paper: #f4efe6;
-  --paper-strong: #ebe4d6;
-  --ink: #2c241c;
-  --muted: #6b5e50;
-  --line: #d8cebe;
+  --paper: #fbf8f3;        /* lokta paper */
+  --paper-strong: #f3ece2; /* panels, forms */
+  --ink: #2a2220;          /* body text */
+  --muted: #6e605a;        /* secondary text (AA on paper) */
+  --line: #e6ddd2;         /* hairlines */
+  --maroon: #6b1f2a;       /* robe maroon: headings, primary actions */
+  --maroon-deep: #561821;  /* hover */
+  --maroon-soft: #f4e9e6;  /* the visitor's own messages */
+  --saffron: #c98a1e;      /* accent: lotus mark, focus, breath */
+  --saffron-soft: #f6e7c8; /* citation chips */
   --background: var(--paper);
   --foreground: var(--ink);
 }
@@ -13,8 +22,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-source-sans);
-  --font-serif: var(--font-source-serif);
+  --font-sans: var(--font-figtree), "PingFang SC", "Hiragino Sans", "Noto Sans CJK SC", system-ui, sans-serif;
+  --font-serif: var(--font-marcellus), "Songti SC", "Hiragino Mincho ProN", "Noto Serif CJK SC", Georgia, serif;
 }
 
 body {
@@ -25,4 +34,27 @@ body {
 html,
 body {
   height: 100%;
+}
+
+::selection {
+  background: var(--saffron-soft);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* A slow in-and-out, roughly the pace of a calm breath. */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.7); opacity: 1; }
+}
+.breath {
+  animation: breathe 5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .breath { animation: none; opacity: 0.9; }
 }

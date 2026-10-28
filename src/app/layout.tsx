@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
-import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
+import { Figtree, Marcellus } from "next/font/google";
 import "./globals.css";
 
-const sans = Source_Sans_3({
-  variable: "--font-source-sans",
-  subsets: ["latin"],
+const sans = Figtree({
+  variable: "--font-figtree",
+  subsets: ["latin", "latin-ext"],
 });
 
-const serif = Source_Serif_4({
-  variable: "--font-source-serif",
-  subsets: ["latin"],
+// Inscriptional serif, in the spirit of carved temple lettering. One weight.
+const serif = Marcellus({
+  variable: "--font-marcellus",
+  weight: "400",
+  subsets: ["latin", "latin-ext"],
 });
 
 export const metadata: Metadata = {
