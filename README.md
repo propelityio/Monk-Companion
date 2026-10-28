@@ -16,14 +16,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## How answers stay grounded
+## How the conversation works
 
-1. A fast model turns the question into search terms (English, Spanish, Portuguese).
+The Monk opens with a time-of-day question ("Good morning. How are you feeling as this day
+begins?"), and that question is sent along with the conversation, so the person's reply is
+understood as an answer to it.
+
+1. A fast model reads the recent conversation and decides what the latest message is:
+   a **share** (how they feel, what is happening), a **question** about a teaching, or **small talk**,
+   and turns it into search terms (English, Spanish, Portuguese).
 2. Supabase full-text search finds matching passages in `teaching_chunks`.
-3. If nothing matches, the companion says the teaching is not loaded. No model writes an answer.
-4. Otherwise the answer model sees only those passages, must cite them as `[n]`,
-   and answers `NO_ANSWER` when they don't fit. Uncited answers are discarded.
-5. Crisis language is checked first and always routes to 988.
+3. With matching passages, the answer model replies conversationally: a brief acknowledgement,
+   teaching taken only from the passages and cited as `[n]`, and one gentle follow-up question.
+   It answers `NO_ANSWER` when the passages don't fit, and uncited answers are discarded.
+4. With no fitting passage:
+   - a **share** or **small talk** gets a short listening reply (acknowledge, invite more) that
+     is not allowed to contain any teaching or advice;
+   - a **question** gets the honest "no recorded teaching yet" reply.
+5. Crisis language is checked first on every message and always routes to a crisis line.
 
 ## Languages, greeting and voice
 

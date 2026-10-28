@@ -72,7 +72,19 @@ export function MonkChat() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: nextMessages.map(({ role, content }) => ({ role, content })),
+          // The Monk's opening question is part of the conversation, so the
+          // reply to "How are you feeling?" is understood as an answer to it.
+          messages: [
+            ...(moment
+              ? [
+                  {
+                    role: "assistant" as const,
+                    content: `${withName(t.greetings[moment.time].hello, profile?.name)} ${t.greetings[moment.time].questions[moment.variant]}`,
+                  },
+                ]
+              : []),
+            ...nextMessages.map(({ role, content }) => ({ role, content })),
+          ],
           profile,
           locale,
           region: detectRegion(),

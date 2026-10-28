@@ -69,10 +69,16 @@ export async function answer(
   if (!knowledgeBaseConfigured()) return replyTo(messages, ctx);
 
   try {
-    const passages = await findPassages(query);
-    if (passages.length > 0) {
+    const { intent, passages } = await findPassages(messages);
+    if (passages.length > 0 && intent !== "smalltalk") {
       const grounded = await groundedAnswer(messages, passages);
       if (grounded) return grounded;
+    }
+    if (isAboutTheSite(query)) return siteNote(messages, ctx);
+    // Someone sharing how they are (or saying hello) gets listened to, not refused.
+    if (intent !== "question") {
+      const listening = await listeningReply(messages);
+      if (listening) return listening;
     }
   } catch (err) {
     console.error("[chat] knowledge base error:", err);
@@ -81,9 +87,7 @@ export async function answer(
     return { content: text.error, citations: [], crisis: false };
   }
 
-  // Nothing in the teachings answers this. Only fall back to the site notes for
-  // questions about the companion itself; otherwise say so honestly.
-  if (isAboutTheSite(query)) return siteNote(messages, ctx);
+  // A question that nothing in the teachings answers: say so honestly.
   return { content: text.noTeaching, citations: [], crisis: false };
 }
 
@@ -120,20 +124,45 @@ function isAboutTheSite(q: string): boolean {
   );
 }
 
-async function findPassages(question: string): Promise<Passage[]> {
+/** Recent turns as plain text, so the models see the Monk's own questions too. */
+function transcript(messages: ChatMessage[], turns = 8): string {
+  return messages
+    .slice(-turns)
+    .map((m) => `${m.role === "user" ? "Person" : "Companion"}: ${m.content.replace(/\s*\[\d+(?:,\s*\d+)*\]/g, "")}`)
+    .join("\n");
+}
+
+export type Intent = "question" | "share" | "smalltalk";
+
+async function findPassages(
+  messages: ChatMessage[],
+): Promise<{ intent: Intent; passages: Passage[] }> {
+  const latest = lastUserText(messages);
   const raw = await claude({
     model: MODELS.search,
     maxTokens: 200,
     temperature: 0,
     system:
-      "You turn a person's question into full-text search terms for a database of Buddhist teachings by Ven. Kalden, in English, Spanish and Portuguese. " +
-      'Reply with JSON only, no prose: {"en": "...", "es": "...", "pt": "..."}. ' +
-      'Each value is 3 to 8 key words or short phrases joined by " or ", in that language: the main concepts plus close synonyms and related Buddhist terms ' +
-      '(e.g. anger -> "anger or angry or hatred or patience or irritation"). No stop words, no quotes, no punctuation besides "or".',
-    messages: [{ role: "user", content: question }],
+      "You help a Buddhist teaching companion find relevant passages in a database of teachings by Ven. Kalden (English, Spanish, Portuguese). " +
+      "Read the conversation and focus on the person's LATEST message, using earlier turns only for context " +
+      '(e.g. if the companion asked "How are you feeling?" and the person said "stressed about work", search for stress). ' +
+      'Reply with JSON only, no prose: {"intent": "...", "en": "...", "es": "...", "pt": "..."}. ' +
+      'intent is "question" (asks about a teaching or practice), "share" (tells how they feel or what is happening in their life), or "smalltalk" (greetings, thanks, "I\'m fine"). ' +
+      'Each language value is 3 to 8 key words or short phrases joined by " or ", in that language: the underlying concerns plus close synonyms and related Buddhist terms ' +
+      '(e.g. anger -> "anger or angry or hatred or patience or irritation"). No stop words, no quotes, no punctuation besides "or". For smalltalk use empty strings.',
+    messages: [{ role: "user", content: transcript(messages, 6) }],
   });
-  return searchTeachings(parseSearchTerms(raw, question), 8);
+  const intent = parseIntent(raw);
+  if (intent === "smalltalk") return { intent, passages: [] };
+  return { intent, passages: await searchTeachings(parseSearchTerms(raw, latest), 8) };
 }
+
+export function parseIntent(raw: string): Intent {
+  const m = raw.match(/"intent"\s*:\s*"(question|share|smalltalk)"/);
+  return (m?.[1] as Intent | undefined) ?? "question";
+}
+
+const COMPANION = "You are Monk Companion, offered by Awaythroughfoundation. You walk alongside people with the teachings of Ven. Kalden, a Buddhist monk. You are not Kalden and never speak as him.";
 
 async function groundedAnswer(
   messages: ChatMessage[],
@@ -143,32 +172,30 @@ async function groundedAnswer(
     .map((p, i) => `[${i + 1}] From "${p.title}" (language: ${p.language})\n${p.content}`)
     .join("\n\n---\n\n");
 
-  const history = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }));
-  const last = history.pop();
-  if (!last || last.role !== "user") return null;
-  // The API needs alternating roles starting with a user turn.
-  while (history.length && history[0].role !== "user") history.shift();
-
   const reply = await claude({
     model: MODELS.answer,
     maxTokens: 700,
-    temperature: 0.3,
+    temperature: 0.4,
     system: [
-      "You are Monk Companion, offered by Awaythroughfoundation. You share the teachings of Ven. Kalden, a Buddhist monk. You are not Kalden and never speak as him.",
+      COMPANION,
+      "This is a two-way conversation, not a search engine. Respond to what the person just said, in the context of the conversation so far.",
       "RULES:",
-      "1. Use ONLY the numbered passages supplied with the person's message. Do not add Buddhist teachings, quotes, practices, or facts from anywhere else, even if you know them.",
-      `2. If the passages do not genuinely address the question, reply with exactly ${NO_ANSWER} and nothing else.`,
-      "3. Cite every point with the passage number in square brackets, like [2]. Every paragraph must contain at least one citation.",
-      '4. Lines starting with "Participant:" are students speaking, not Kalden. Never present them as his teaching.',
-      "5. Reply in the same language as the person's question, even if the passages are in another language. Keep Kalden's meaning; do not invent wording and present it as a quote.",
-      "6. Be warm, plain and brief: 2 to 4 short paragraphs. You may suggest a reflection only if it comes from the passages.",
-      "7. You are not a therapist or doctor. If the person seems in danger, tell them to contact emergency services or call or text 988 in the US.",
+      "1. Any teaching, idea, practice or advice you give must come ONLY from the numbered passages. Do not add Buddhist teachings, quotes, practices or facts from anywhere else, even if you know them.",
+      "2. Cite each teaching point with its passage number in square brackets, like [2].",
+      "3. You may, without a citation: briefly acknowledge what the person shared in their own terms (one short sentence), and end with ONE gentle, open follow-up question that invites them to reflect or say more. Never put new teaching into those uncited sentences.",
+      `4. If the passages do not genuinely relate to what the person said, reply with exactly ${NO_ANSWER} and nothing else.`,
+      '5. Lines starting with "Participant:" are students speaking, not Kalden. Never present them as his teaching.',
+      "6. Reply in the language of the person's latest message, even if the passages are in another language. Keep Kalden's meaning; do not invent wording and present it as a quote.",
+      "7. Be warm, plain and brief, like a kind monk speaking: 2 to 4 short paragraphs including the closing question.",
+      "8. You are not a therapist or doctor. If the person seems in danger, tell them to contact emergency services or a crisis line (988 in the US).",
     ].join("\n"),
     messages: [
-      ...history,
       {
         role: "user",
-        content: `Passages from Ven. Kalden's recorded teachings:\n\n${numbered}\n\n===\n\nQuestion: ${last.content}`,
+        content:
+          `Conversation so far:\n${transcript(messages)}\n\n===\n\n` +
+          `Passages from Ven. Kalden's recorded teachings:\n\n${numbered}\n\n===\n\n` +
+          `Write the Companion's next reply to the person's latest message.`,
       },
     ],
   });
@@ -211,4 +238,29 @@ async function groundedAnswer(
     .replace(/(\[\d+(?:, \d+)*\])(\s*\1)+/g, "$1")
     .trim();
   return { content, citations, crisis: false };
+}
+
+/**
+ * When someone shares how they are and no teaching fits, listen instead of
+ * refusing: acknowledge in a sentence and invite them to say more. No teaching,
+ * advice or practice is allowed here, so nothing is presented as Kalden's.
+ */
+async function listeningReply(messages: ChatMessage[]): Promise<ChatReply | null> {
+  const reply = await claude({
+    model: MODELS.search,
+    maxTokens: 150,
+    temperature: 0.4,
+    system: [
+      COMPANION,
+      "Write the Companion's next reply in this conversation. You have NO teachings available for this turn.",
+      "Write at most two short sentences: a warm, plain acknowledgement of what the person said, then ONE open question inviting them to share more or to say what they would like to explore.",
+      "Do NOT give advice, teachings, practices, quotes, explanations or Buddhist ideas of any kind. Do not mention Kalden, the teachings, or that anything is missing.",
+      "Reply in the language of the person's latest message. Output only the reply.",
+    ].join("\n"),
+    messages: [{ role: "user", content: `Conversation so far:\n${transcript(messages)}` }],
+  });
+  const clean = reply.replace(/^companion:\s*/i, "").trim();
+  // Guard: listening replies are short; anything long is probably advice.
+  if (!clean || clean.length > 320 || /\[\d+\]/.test(clean)) return null;
+  return { content: clean, citations: [], crisis: false };
 }
