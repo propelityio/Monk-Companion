@@ -38,8 +38,8 @@ export default function Home() {
           <div>
             <h2 className="font-serif text-xl text-[var(--maroon)]">Guest conversation</h2>
             <p className="mt-2 leading-7 text-[var(--muted)]">
-              Talk immediately. Voice or text. Nothing is required except your
-              presence in this browser session.
+              Talk right away by voice, text, or both. Nothing is needed but your
+              presence.
             </p>
           </div>
           <div>
