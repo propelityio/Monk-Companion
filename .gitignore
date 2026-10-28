@@ -44,3 +44,6 @@ next-env.d.ts
 /knowledge/sources/*
 !/knowledge/sources/README.md
 !.env.example
+
+# original, untrimmed bell recordings (large; trimmed versions live in public/sounds)
+/sounds-source/
