@@ -51,6 +51,9 @@ type UiText = {
   speakReplies: string;
   aiVoice: string;
   aiVoiceNote: string;
+  notAdvice: string;
+  crisisIn: (country: string, line: string, canText: boolean) => string;
+  crisisAnywhere: string;
   curatedPath: string;
   path: string;
   profileIntro: string;
@@ -83,6 +86,9 @@ export const UI: Record<Locale, UiText> = {
     speakReplies: "Speak replies",
     aiVoice: "AI voice",
     aiVoiceNote: "Replies are read aloud by an AI-generated voice, not a recording of a real person.",
+    notAdvice: "Not therapy or medical advice.",
+    crisisIn: (c, l, t) => `If you are in crisis in ${c}, ${t ? "call or text" : "call"} ${l}, or contact your local emergency number.`,
+    crisisAnywhere: "If you are in crisis, contact your local emergency number or find a free helpline in your country at",
     curatedPath: "Curated path",
     path: "Path",
     profileIntro:
@@ -147,6 +153,9 @@ export const UI: Record<Locale, UiText> = {
     speakReplies: "Leer respuestas en voz alta",
     aiVoice: "Voz de IA",
     aiVoiceNote: "Las respuestas se leen con una voz generada por IA, no con la grabación de una persona real.",
+    notAdvice: "No es terapia ni consejo médico.",
+    crisisIn: (c, l, t) => `Si estás en crisis en ${c}, ${t ? "llama o envía un mensaje al" : "llama al"} ${l}, o contacta con el número de emergencias local.`,
+    crisisAnywhere: "Si estás en crisis, llama al número de emergencias local o encuentra una línea de ayuda gratuita en tu país en",
     curatedPath: "Camino personal",
     path: "Camino",
     profileIntro:
@@ -211,6 +220,9 @@ export const UI: Record<Locale, UiText> = {
     speakReplies: "Ler respostas em voz alta",
     aiVoice: "Voz de IA",
     aiVoiceNote: "As respostas são lidas por uma voz gerada por IA, não pela gravação de uma pessoa real.",
+    notAdvice: "Não é terapia nem aconselhamento médico.",
+    crisisIn: (c, l, t) => `Se você estiver em crise (${c}), ${t ? "ligue ou envie mensagem para o" : "ligue para o"} ${l}, ou contate o número de emergência local.`,
+    crisisAnywhere: "Se você estiver em crise, ligue para o número de emergência local ou encontre uma linha de apoio gratuita no seu país em",
     curatedPath: "Caminho pessoal",
     path: "Caminho",
     profileIntro:
@@ -275,6 +287,9 @@ export const UI: Record<Locale, UiText> = {
     speakReplies: "Lire les réponses à voix haute",
     aiVoice: "Voix IA",
     aiVoiceNote: "Les réponses sont lues par une voix générée par IA, et non par l’enregistrement d’une personne réelle.",
+    notAdvice: "Ceci n’est ni une thérapie ni un avis médical.",
+    crisisIn: (c, l, t) => `Si vous êtes en crise (${c}), ${t ? "appelez ou écrivez au" : "appelez le"} ${l}, ou contactez le numéro d’urgence local.`,
+    crisisAnywhere: "Si vous êtes en crise, contactez le numéro d’urgence local ou trouvez une ligne d’écoute gratuite dans votre pays sur",
     curatedPath: "Chemin personnel",
     path: "Chemin",
     profileIntro:
@@ -339,6 +354,9 @@ export const UI: Record<Locale, UiText> = {
     speakReplies: "Antworten vorlesen",
     aiVoice: "KI-Stimme",
     aiVoiceNote: "Antworten werden von einer KI-generierten Stimme vorgelesen, nicht von der Aufnahme eines echten Menschen.",
+    notAdvice: "Keine Therapie oder medizinische Beratung.",
+    crisisIn: (c, l, t) => `Wenn Sie in einer Krise sind (${c}), rufen Sie die ${l} an${t ? " oder schreiben Sie eine SMS" : ""} oder wählen Sie den örtlichen Notruf.`,
+    crisisAnywhere: "Wenn Sie in einer Krise sind, wählen Sie den örtlichen Notruf oder finden Sie eine kostenlose Hilfeleitung in Ihrem Land unter",
     curatedPath: "Persönlicher Weg",
     path: "Weg",
     profileIntro:
@@ -403,6 +421,9 @@ export const UI: Record<Locale, UiText> = {
     speakReplies: "Leggi le risposte ad alta voce",
     aiVoice: "Voce IA",
     aiVoiceNote: "Le risposte sono lette da una voce generata dall’IA, non dalla registrazione di una persona reale.",
+    notAdvice: "Non è terapia né consulenza medica.",
+    crisisIn: (c, l, t) => `Se sei in crisi (${c}), ${t ? "chiama o scrivi al" : "chiama il"} ${l}, oppure contatta il numero di emergenza locale.`,
+    crisisAnywhere: "Se sei in crisi, contatta il numero di emergenza locale o trova una linea di ascolto gratuita nel tuo paese su",
     curatedPath: "Percorso personale",
     path: "Percorso",
     profileIntro:
@@ -467,6 +488,9 @@ export const UI: Record<Locale, UiText> = {
     speakReplies: "朗读回复",
     aiVoice: "AI 语音",
     aiVoiceNote: "回复由 AI 生成的语音朗读，并非真人录音。",
+    notAdvice: "这不是心理治疗或医疗建议。",
+    crisisIn: (c, l, t) => `如果你在${c}正处于危机中，请拨打${t ? "或发短信至" : ""} ${l}，或联系当地紧急电话。`,
+    crisisAnywhere: "如果你正处于危机中，请联系当地紧急电话，或在以下网站查找你所在国家的免费求助热线：",
     curatedPath: "个人修行之路",
     path: "修行之路",
     profileIntro: "可选。留下称呼和电子邮箱即可让我们认出你。在正式的身份服务上线前，信息仅保存在此浏览器中。",
@@ -514,6 +538,9 @@ export const UI: Record<Locale, UiText> = {
     speakReplies: "返答を読み上げる",
     aiVoice: "AI音声",
     aiVoiceNote: "返答は AI が生成した音声で読み上げられます。実在の人物の録音ではありません。",
+    notAdvice: "これはセラピーや医療上の助言ではありません。",
+    crisisIn: (c, l, t) => `${c}で危機的な状況にある場合は、${l} に${t ? "電話またはメッセージ" : "電話"}するか、地域の緊急番号に連絡してください。`,
+    crisisAnywhere: "危機的な状況にある場合は、地域の緊急番号に連絡するか、次のサイトでお住まいの国の無料相談窓口を探してください：",
     curatedPath: "あなたの道",
     path: "道",
     profileIntro: "任意です。お名前とメールアドレスがあれば、あなたを覚えておけます。本格的な認証サービスができるまでは、このブラウザに保存されます。",
@@ -631,6 +658,9 @@ export function regionFromTimeZone(tz: string | null | undefined): string | null
   };
   return map[tz] ?? null;
 }
+
+/** Regions whose crisis line also accepts text messages. */
+export const CRISIS_TEXT_OK = new Set(["US", "CA"]);
 
 export const CRISIS_COUNTRY: Record<string, string> = {
   US: "the United States",

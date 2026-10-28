@@ -5,6 +5,7 @@ import type { ChatCitation, ChatMessage } from "@/lib/chat";
 import { LOCALE_NAMES, LOCALES, SPEECH_LANG, UI, toLocale, type Locale } from "@/lib/i18n";
 import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib/profile";
 import { detectRegion, setLocale, useGreetingMoment, useLocale } from "@/lib/use-prefs";
+import { CrisisNote } from "./crisis-note";
 
 type SpeechRec = {
   lang: string;
@@ -377,6 +378,9 @@ export function MonkChat() {
             {t.send}
           </button>
         </div>
+        <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
+          <CrisisNote locale={locale} />
+        </p>
       </form>
     </div>
   );

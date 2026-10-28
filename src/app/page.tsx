@@ -14,8 +14,10 @@ export default function Home() {
         </h1>
         <p className="mt-3 text-sm text-[var(--muted)]">from Awaythroughfoundation</p>
         <p className="mt-8 max-w-xl text-lg leading-8 text-[var(--ink)]">
-          An authentic companion grounded in Buddhist teachings. Speak or write.
-          No subscription. No login to begin.
+          An authentic companion grounded in Buddhist teachings.
+        </p>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Speak or write. No subscription. No login to begin.
         </p>
         <div className="mt-10 flex flex-wrap gap-3">
           <Link
@@ -33,7 +35,7 @@ export default function Home() {
         </div>
         <section
           id="how"
-          className="mt-24 grid gap-x-12 gap-y-10 border-t border-[var(--line)] pt-12 sm:grid-cols-2"
+          className="mt-24 grid gap-x-10 gap-y-10 border-t border-[var(--line)] pt-12 sm:grid-cols-3"
         >
           <div>
             <h2 className="font-serif text-xl text-[var(--maroon)]">Guest conversation</h2>
@@ -52,15 +54,9 @@ export default function Home() {
           <div>
             <h2 className="font-serif text-xl text-[var(--maroon)]">Teachings as the source</h2>
             <p className="mt-2 leading-7 text-[var(--muted)]">
-              Recorded talks, transcripts, and written text will be cited. The
-              companion will not invent dharma when a talk is not yet loaded.
-            </p>
-          </div>
-          <div>
-            <h2 className="font-serif text-xl text-[var(--maroon)]">Later, an app</h2>
-            <p className="mt-2 leading-7 text-[var(--muted)]">
-              Phase II is a phone app using the same conversation. This website
-              is the first door.
+              Every answer comes from recorded talks by Buddhist teachers, with a
+              link to the source. When no teaching speaks to your question, the
+              companion says so instead of guessing.
             </p>
           </div>
         </section>
