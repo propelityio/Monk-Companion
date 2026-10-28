@@ -121,7 +121,8 @@ export function useReplyMode(): ReplyMode {
 }
 
 export function useHandsFree(): boolean {
-  return useSyncExternalStore(subscribePrefs, () => readStored(HANDS_FREE_KEY) === "1", () => false);
+  // On unless the visitor has turned it off.
+  return useSyncExternalStore(subscribePrefs, () => readStored(HANDS_FREE_KEY) !== "0", () => true);
 }
 
 export function setHandsFree(on: boolean) {
