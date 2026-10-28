@@ -14,13 +14,53 @@ const PARTIALS: { ratio: number; gain: number; decay: number }[] = [
   { ratio: 8.43, gain: 0.07, decay: 2 },
 ];
 
-export function playBell(volume = 0.22, fundamental = 262): void {
+/**
+ * A recorded bell, if one has been added at public/sounds/bell.mp3 (it must be
+ * a recording you have the rights to use). Without it, the synthesised bowl plays.
+ */
+const BELL_FILE = "/sounds/bell.mp3";
+let fileMissing = false;
+
+export function playBell(volume = 0.22): void {
   if (typeof window === "undefined") return;
+  bellRangAt = Date.now();
+  // Wake the audio engine now, inside the click, so a fallback can still sound.
+  unlockAudio();
+  if (fileMissing) return synthBell(volume);
+  let fellBack = false;
+  const fallBack = () => {
+    if (fellBack) return;
+    fellBack = true;
+    fileMissing = true;
+    synthBell(volume);
+  };
   try {
-    const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const audio = new Audio(BELL_FILE);
+    audio.volume = Math.min(1, volume * 3);
+    audio.onerror = fallBack;
+    void audio.play().catch(fallBack);
+  } catch {
+    fallBack();
+  }
+}
+
+function unlockAudio(): void {
+  try {
+    const Ctor =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
     ctx ??= new Ctor();
     void ctx.resume();
+  } catch {
+    /* no Web Audio */
+  }
+}
+
+function synthBell(volume: number, fundamental = 262): void {
+  try {
+    unlockAudio();
+    if (!ctx) return;
     const now = ctx.currentTime + 0.02;
 
     const master = ctx.createGain();
@@ -42,7 +82,6 @@ export function playBell(volume = 0.22, fundamental = 262): void {
         osc.stop(now + p.decay + 0.1);
       }
     }
-    bellRangAt = Date.now();
   } catch {
     /* sound is a nicety; never block navigation */
   }
