@@ -85,6 +85,7 @@ export function MonkChat() {
   const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState<GuestProfile>({ name: "", email: "", intention: "" });
   const recRef = useRef<SpeechRec | null>(null);
+  const sendingRef = useRef(false);
   const greetingText = moment
     ? `${withName(t.greetings[moment.time].hello, profile?.name)} ${t.greetings[moment.time].questions[moment.variant]}`
     : null;
@@ -97,9 +98,18 @@ export function MonkChat() {
     handsFree,
     greetingText,
     locale,
+    revealKey: null as string | null,
   });
   useEffect(() => {
-    latest.current = { messages, send, startListening, handsFree, greetingText, locale };
+    latest.current = {
+      messages,
+      send,
+      startListening,
+      handsFree,
+      greetingText,
+      locale,
+      revealKey: reveal?.key ?? null,
+    };
   });
 
   // Arriving by the bell: wait until it has finished ringing, then the Monk
@@ -156,13 +166,31 @@ export function MonkChat() {
     document.documentElement.lang = locale;
   }, [locale]);
 
+  // While the Monk speaks, keep the word being said in view.
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    if (!reveal) return;
+    const words = listRef.current?.querySelectorAll(".word-in");
+    words?.[words.length - 1]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [reveal]);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    // A reply that is about to be spoken: show where it begins, then the
+    // effect above follows the voice. Otherwise go to the newest message.
+    if (latest.current.revealKey === `m${messages.length - 1}`) {
+      const articles = list.querySelectorAll("article");
+      articles[articles.length - 1]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      return;
+    }
+    list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
 
   async function send(text: string) {
     const content = text.trim();
-    if (!content || busy) return;
+    // A ref, not state: two quick clicks happen before state updates.
+    if (!content || sendingRef.current) return;
+    sendingRef.current = true;
 
     const nextMessages: DisplayMessage[] = [...latest.current.messages, { role: "user", content }];
     setReveal(null);
@@ -215,6 +243,7 @@ export function MonkChat() {
         { role: "assistant", content: t.connectionDropped },
       ]);
     } finally {
+      sendingRef.current = false;
       setBusy(false);
     }
   }
