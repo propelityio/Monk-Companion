@@ -19,17 +19,17 @@ export default function Home() {
           Speak or write. No subscription. No login to begin.
         </p>
         <div className="mt-10 flex flex-wrap gap-3">
-          <OpenChatLink
-            className="rounded-full bg-[var(--maroon)] px-6 py-3 text-[var(--paper)] transition-colors hover:bg-[var(--maroon-deep)]"
-          >
-            Open Monk Chat
-          </OpenChatLink>
           <a
             href="#how"
             className="rounded-full border border-[var(--line)] px-6 py-3 text-[var(--maroon)] transition-colors hover:border-[var(--maroon)]"
           >
             How it works
           </a>
+          <OpenChatLink
+            className="rounded-full bg-[var(--maroon)] px-6 py-3 text-[var(--paper)] transition-colors hover:bg-[var(--maroon-deep)]"
+          >
+            Open Monk Chat
+          </OpenChatLink>
         </div>
         <section
           id="how"
