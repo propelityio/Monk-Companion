@@ -17,11 +17,34 @@ const PARTIALS: { ratio: number; gain: number; decay: number }[] = [
 ];
 
 /**
- * A recorded bell, if one has been added at public/sounds/bell.mp3 (it must be
- * a recording you have the rights to use). Without it, the synthesised bowl plays.
+ * Recorded bells in public/sounds (recordings the foundation has the rights to).
+ * Each visit uses the next one in turn, and keeps it for the whole visit.
+ * If a file can't be played, the synthesised bowl rings instead.
  */
-const BELL_FILE = "/sounds/bell.mp3";
+export const BELLS = [
+  "/sounds/bell-tibetan-bell.mp3",
+  "/sounds/bell-small-bowl.mp3",
+  "/sounds/bell-silver-bells.mp3",
+  "/sounds/bell-singing-bowl.mp3",
+];
+const NEXT_KEY = "monk-companion-next-bell"; // across visits (localStorage)
+const VISIT_KEY = "monk-companion-visit-bell"; // this visit (sessionStorage)
 let fileMissing = false;
+
+/** The bell for this visit: the same all visit, the next one on the next visit. */
+export function bellForThisVisit(): string {
+  try {
+    const current = window.sessionStorage.getItem(VISIT_KEY);
+    if (current !== null && BELLS[Number(current)]) return BELLS[Number(current)];
+    const next = Number(window.localStorage.getItem(NEXT_KEY) ?? 0) % BELLS.length || 0;
+    window.sessionStorage.setItem(VISIT_KEY, String(next));
+    window.localStorage.setItem(NEXT_KEY, String((next + 1) % BELLS.length));
+    return BELLS[next];
+  } catch {
+    // Storage blocked (e.g. private mode): pick one at random instead.
+    return BELLS[Math.floor(Math.random() * BELLS.length)];
+  }
+}
 
 export function playBell(volume = 0.22): void {
   if (typeof window === "undefined") return;
@@ -42,7 +65,7 @@ export function playBell(volume = 0.22): void {
     synthBell(volume);
   };
   try {
-    const audio = new Audio(BELL_FILE);
+    const audio = new Audio(bellForThisVisit());
     audio.volume = Math.min(1, volume * 3);
     audio.onended = () => finishBell();
     audio.onerror = fallBack;
