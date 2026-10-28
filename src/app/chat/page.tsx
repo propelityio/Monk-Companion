@@ -1,4 +1,4 @@
-import { MonkChat } from "@/components/monk-chat";
+import { ChatHost } from "@/components/chat-host";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata = {
@@ -9,7 +9,7 @@ export default function ChatPage() {
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader />
-      <MonkChat />
+      <ChatHost />
     </div>
   );
 }

@@ -59,6 +59,8 @@ type UiText = {
   showText: string;
   hideText: string;
   spokenReply: string;
+  pause: string;
+  resume: string;
   aiVoiceNote: string;
   notAdvice: string;
   crisisIn: (country: string, line: string, canText: boolean) => string;
@@ -104,6 +106,8 @@ export const UI: Record<Locale, UiText> = {
     showText: "Show text",
     hideText: "Hide text",
     spokenReply: "Spoken reply",
+    pause: "Pause",
+    resume: "Resume",
     notAdvice: "Not therapy or medical advice.",
     crisisIn: (c, l, t) => `If you are in crisis in ${c}, ${t ? "call or text" : "call"} ${l}, or contact your local emergency number.`,
     crisisAnywhere: "If you are in crisis, contact your local emergency number or find a free helpline in your country at",
@@ -180,6 +184,8 @@ export const UI: Record<Locale, UiText> = {
     showText: "Mostrar texto",
     hideText: "Ocultar texto",
     spokenReply: "Respuesta hablada",
+    pause: "Pausar",
+    resume: "Continuar",
     notAdvice: "No es terapia ni consejo médico.",
     crisisIn: (c, l, t) => `Si estás en crisis en ${c}, ${t ? "llama o envía un mensaje al" : "llama al"} ${l}, o contacta con el número de emergencias local.`,
     crisisAnywhere: "Si estás en crisis, llama al número de emergencias local o encuentra una línea de ayuda gratuita en tu país en",
@@ -256,6 +262,8 @@ export const UI: Record<Locale, UiText> = {
     showText: "Mostrar texto",
     hideText: "Ocultar texto",
     spokenReply: "Resposta falada",
+    pause: "Pausar",
+    resume: "Continuar",
     notAdvice: "Não é terapia nem aconselhamento médico.",
     crisisIn: (c, l, t) => `Se você estiver em crise (${c}), ${t ? "ligue ou envie mensagem para o" : "ligue para o"} ${l}, ou contate o número de emergência local.`,
     crisisAnywhere: "Se você estiver em crise, ligue para o número de emergência local ou encontre uma linha de apoio gratuita no seu país em",
@@ -332,6 +340,8 @@ export const UI: Record<Locale, UiText> = {
     showText: "Afficher le texte",
     hideText: "Masquer le texte",
     spokenReply: "Réponse orale",
+    pause: "Pause",
+    resume: "Reprendre",
     notAdvice: "Ceci n’est ni une thérapie ni un avis médical.",
     crisisIn: (c, l, t) => `Si vous êtes en crise (${c}), ${t ? "appelez ou écrivez au" : "appelez le"} ${l}, ou contactez le numéro d’urgence local.`,
     crisisAnywhere: "Si vous êtes en crise, contactez le numéro d’urgence local ou trouvez une ligne d’écoute gratuite dans votre pays sur",
@@ -408,6 +418,8 @@ export const UI: Record<Locale, UiText> = {
     showText: "Text anzeigen",
     hideText: "Text ausblenden",
     spokenReply: "Gesprochene Antwort",
+    pause: "Pause",
+    resume: "Fortsetzen",
     notAdvice: "Keine Therapie oder medizinische Beratung.",
     crisisIn: (c, l, t) => `Wenn Sie in einer Krise sind (${c}), rufen Sie die ${l} an${t ? " oder schreiben Sie eine SMS" : ""} oder wählen Sie den örtlichen Notruf.`,
     crisisAnywhere: "Wenn Sie in einer Krise sind, wählen Sie den örtlichen Notruf oder finden Sie eine kostenlose Hilfeleitung in Ihrem Land unter",
@@ -484,6 +496,8 @@ export const UI: Record<Locale, UiText> = {
     showText: "Mostra testo",
     hideText: "Nascondi testo",
     spokenReply: "Risposta parlata",
+    pause: "Pausa",
+    resume: "Riprendi",
     notAdvice: "Non è terapia né consulenza medica.",
     crisisIn: (c, l, t) => `Se sei in crisi (${c}), ${t ? "chiama o scrivi al" : "chiama il"} ${l}, oppure contatta il numero di emergenza locale.`,
     crisisAnywhere: "Se sei in crisi, contatta il numero di emergenza locale o trova una linea di ascolto gratuita nel tuo paese su",
@@ -560,6 +574,8 @@ export const UI: Record<Locale, UiText> = {
     showText: "显示文字",
     hideText: "隐藏文字",
     spokenReply: "语音回复",
+    pause: "暂停",
+    resume: "继续",
     notAdvice: "这不是心理治疗或医疗建议。",
     crisisIn: (c, l, t) => `如果你在${c}正处于危机中，请拨打${t ? "或发短信至" : ""} ${l}，或联系当地紧急电话。`,
     crisisAnywhere: "如果你正处于危机中，请联系当地紧急电话，或在以下网站查找你所在国家的免费求助热线：",
@@ -619,6 +635,8 @@ export const UI: Record<Locale, UiText> = {
     showText: "文字を表示",
     hideText: "文字を隠す",
     spokenReply: "音声の返答",
+    pause: "一時停止",
+    resume: "再開",
     notAdvice: "これはセラピーや医療上の助言ではありません。",
     crisisIn: (c, l, t) => `${c}で危機的な状況にある場合は、${l} に${t ? "電話またはメッセージ" : "電話"}するか、地域の緊急番号に連絡してください。`,
     crisisAnywhere: "危機的な状況にある場合は、地域の緊急番号に連絡するか、次のサイトでお住まいの国の無料相談窓口を探してください：",

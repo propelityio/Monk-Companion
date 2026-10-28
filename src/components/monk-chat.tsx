@@ -58,6 +58,8 @@ export function MonkChat() {
   const showGreeting = !greetingPending || mode === "text";
   // Which text is being spoken right now, and how many characters have been said.
   const [reveal, setReveal] = useState<{ key: string; chars: number } | null>(null);
+  const [paused, setPaused] = useState(false);
+  const speaking = reveal !== null && !greetingPending;
   const spokenFor = (key: string) => (reveal && reveal.key === key ? reveal.chars : undefined);
   /** Speech hooks that reveal `key`'s text as it is spoken. */
   function revealing(key: string, then?: () => void) {
@@ -70,12 +72,14 @@ export function MonkChat() {
       onStart: () => {
         started = true;
         window.clearTimeout(safety);
+        setPaused(false);
         setReveal({ key, chars: 0 });
       },
       onProgress: (chars: number) =>
         setReveal((r) => (r?.key === key ? { key, chars } : r)),
       onEnd: () => {
         window.clearTimeout(safety);
+        setPaused(false);
         setReveal((r) => (r?.key === key ? null : r));
         then?.();
       },
@@ -166,6 +170,26 @@ export function MonkChat() {
     document.documentElement.lang = locale;
   }, [locale]);
 
+  // Leaving or clearing the chat: stop the voice and the microphone.
+  useEffect(
+    () => () => {
+      stopSpeaking();
+      recRef.current?.stop();
+      recRef.current = null;
+    },
+    [],
+  );
+
+  function togglePause() {
+    if (paused) {
+      resumeSpeaking();
+      setPaused(false);
+    } else {
+      pauseSpeaking();
+      setPaused(true);
+    }
+  }
+
   // While the Monk speaks, keep the word being said in view.
   useEffect(() => {
     if (!reveal) return;
@@ -195,6 +219,7 @@ export function MonkChat() {
 
     const nextMessages: DisplayMessage[] = [...latest.current.messages, { role: "user", content }];
     setReveal(null);
+    setPaused(false);
     setMessages(nextMessages);
     setInput("");
     setBusy(true);
@@ -263,6 +288,8 @@ export function MonkChat() {
     }
     if (recRef.current) return;
     stopSpeaking();
+    setReveal(null);
+    setPaused(false);
     try {
       const rec = new Ctor();
       rec.lang = SPEECH_LANG[locale];
@@ -295,6 +322,7 @@ export function MonkChat() {
   function chooseMode(next: ReplyMode) {
     if (next === "text") stopSpeaking();
     setReveal(null);
+    setPaused(false);
     setReplyMode(next);
   }
 
@@ -571,6 +599,19 @@ export function MonkChat() {
       </div>
 
       <form onSubmit={onSubmit} className="border-t border-[var(--line)] px-5 py-4">
+        {speaking ? (
+          <div className="mb-3 flex justify-center">
+            <button
+              type="button"
+              onClick={togglePause}
+              aria-pressed={paused}
+              className="flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/60 px-4 py-1.5 text-sm text-[var(--maroon)] transition-colors hover:border-[var(--maroon)]"
+            >
+              <span aria-hidden="true">{paused ? "▶" : "❚❚"}</span>
+              {paused ? t.resume : t.pause}
+            </button>
+          </div>
+        ) : null}
         <div className="flex items-end gap-2">
           <textarea
             className="min-h-[52px] flex-1 resize-none rounded-2xl border border-[var(--line)] bg-white/60 px-4 py-3 transition-colors focus:border-[var(--saffron)] focus:outline-none"
@@ -636,10 +677,28 @@ let progressFrame = 0;
 let estimateTimer = 0;
 
 let speechRun = 0; // bumped to cancel speech that is still being prepared
+let pausedByVisitor = false;
+
+/** Hold the voice (and the appearing words) where they are. */
+function pauseSpeaking() {
+  if (typeof window === "undefined") return;
+  pausedByVisitor = true;
+  currentAudio?.pause();
+  window.speechSynthesis?.pause();
+}
+
+/** Carry on from where the voice was paused. */
+function resumeSpeaking() {
+  if (typeof window === "undefined") return;
+  pausedByVisitor = false;
+  void currentAudio?.play().catch(() => {});
+  window.speechSynthesis?.resume();
+}
 
 function stopSpeaking() {
   if (typeof window === "undefined") return;
   speechRun++;
+  pausedByVisitor = false;
   window.cancelAnimationFrame(progressFrame);
   window.clearInterval(estimateTimer);
   currentAudio?.pause();
@@ -772,7 +831,8 @@ function playPart(
       finish(true);
     };
     audio.onpause = () => {
-      if (!audio.ended) finish(false); // stopped by the visitor or by new speech
+      // A visitor's pause is not an ending; stopping or new speech is.
+      if (!audio.ended && !pausedByVisitor) finish(false);
     };
     warmVoice(audio);
     currentAudio = audio;
@@ -862,9 +922,13 @@ function browserSpeak(text: string, locale: Locale, hooks: SpeakHooks) {
   };
   utterance.onstart = () => {
     hooks.onStart?.();
-    const began = Date.now();
+    let elapsed = 0; // speaking time only; a pause holds the words in place
+    let lastTick = Date.now();
     estimateTimer = window.setInterval(() => {
-      if (!reported) hooks.onProgress?.(Math.round(((Date.now() - began) / 1000) * 12));
+      const now = Date.now();
+      if (!pausedByVisitor) elapsed += now - lastTick;
+      lastTick = now;
+      if (!reported) hooks.onProgress?.(Math.round((elapsed / 1000) * 12));
     }, 120);
   };
   utterance.onend = () => {
