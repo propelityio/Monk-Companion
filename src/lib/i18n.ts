@@ -91,7 +91,7 @@ export const UI: Record<Locale, UiText> = {
   en: {
     chatTitle: "Monk Chat",
     guest: "Guest conversation · no account required",
-    curatedFor: (n) => `Curated for ${n}`,
+    curatedFor: (n) => `${n}’s path`,
     speakReplies: "Speak replies",
     aiVoice: "AI voice",
     aiVoiceNote: "Replies are read aloud by an AI-generated voice, not a recording of a real person.",
@@ -107,7 +107,7 @@ export const UI: Record<Locale, UiText> = {
     notAdvice: "Not therapy or medical advice.",
     crisisIn: (c, l, t) => `If you are in crisis in ${c}, ${t ? "call or text" : "call"} ${l}, or contact your local emergency number.`,
     crisisAnywhere: "If you are in crisis, contact your local emergency number or find a free helpline in your country at",
-    curatedPath: "Curated path",
+    curatedPath: "Personal path",
     path: "Path",
     profileIntro:
       "Optional. Name and email are enough for us to recognize you. Stored in this browser until a real identity service is added.",

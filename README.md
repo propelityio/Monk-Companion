@@ -5,7 +5,7 @@ Website for [A Way Through Foundation](https://github.com/propelityio/kaldenthem
 - **Product:** Monk Companion
 - **Conversation UI:** Monk Chat (`/chat`)
 - **Access:** no login or subscription to talk
-- **Curated path:** optional name + email stored in the browser for now
+- **Personal path:** optional name (+ intention) stored in the browser; the Monk greets by name and keeps the intention in mind
 
 ## Run locally
 

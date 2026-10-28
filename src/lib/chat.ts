@@ -31,6 +31,8 @@ export type ChatContext = {
   locale: Locale;
   /** Country code used only to show the right crisis line. */
   region?: string | null;
+  /** What the visitor chose to share on their personal path. */
+  person?: { name?: string; intention?: string } | null;
 };
 
 const DEFAULT_CONTEXT: ChatContext = { locale: "en", region: null };
@@ -71,13 +73,13 @@ export async function answer(
   try {
     const { intent, passages } = await findPassages(messages);
     if (passages.length > 0 && intent !== "smalltalk") {
-      const grounded = await groundedAnswer(messages, passages);
+      const grounded = await groundedAnswer(messages, passages, ctx.person);
       if (grounded) return grounded;
     }
     if (isAboutTheSite(query)) return siteNote(messages, ctx);
     // Someone sharing how they are (or saying hello) gets listened to, not refused.
     if (intent !== "question") {
-      const listening = await listeningReply(messages);
+      const listening = await listeningReply(messages, ctx.person);
       if (listening) return listening;
     }
   } catch (err) {
@@ -178,9 +180,25 @@ const PERSONA = [
   "- Kind about mistakes and difficulty: patience with oneself, no guilt.",
 ].join("\n");
 
+/** The visitor's own name and intention, as context for tone and focus only. */
+function aboutThePerson(person?: ChatContext["person"]): string {
+  const name = person?.name?.trim();
+  const intention = person?.intention?.trim();
+  if (!name && !intention) return "";
+  return (
+    "About the person (they chose to share this):\n" +
+    (name ? `- Their name: ${name}. You may use it now and then, naturally, not in every reply.\n` : "") +
+    (intention
+      ? `- An intention they are working with: "${intention}". Keep it in mind when choosing what to emphasise; connect to it only when it genuinely fits. It is never a source of teaching.\n`
+      : "") +
+    "\n===\n\n"
+  );
+}
+
 async function groundedAnswer(
   messages: ChatMessage[],
   passages: Passage[],
+  person?: ChatContext["person"],
 ): Promise<ChatReply | null> {
   const numbered = passages
     .map((p, i) => `[${i + 1}] From "${p.title}" (language: ${p.language})\n${p.content}`)
@@ -208,6 +226,7 @@ async function groundedAnswer(
       {
         role: "user",
         content:
+          aboutThePerson(person) +
           `Conversation so far:\n${transcript(messages)}\n\n===\n\n` +
           `Passages from recorded Buddhist teachings:\n\n${numbered}\n\n===\n\n` +
           `Write the Companion's next reply to the person's latest message.`,
@@ -245,7 +264,10 @@ async function groundedAnswer(
  * refusing: acknowledge in a sentence and invite them to say more. No teaching,
  * advice or practice is allowed here, so nothing is presented as a teaching.
  */
-async function listeningReply(messages: ChatMessage[]): Promise<ChatReply | null> {
+async function listeningReply(
+  messages: ChatMessage[],
+  person?: ChatContext["person"],
+): Promise<ChatReply | null> {
   const reply = await claude({
     model: MODELS.search,
     maxTokens: 150,
@@ -257,7 +279,9 @@ async function listeningReply(messages: ChatMessage[]): Promise<ChatReply | null
       "Do NOT give advice, teachings, practices, quotes, explanations or Buddhist ideas of any kind. Do not mention any teacher, the teachings, or that anything is missing.",
       "Reply in the language of the person's latest message. Output only the reply.",
     ].join("\n"),
-    messages: [{ role: "user", content: `Conversation so far:\n${transcript(messages)}` }],
+    messages: [
+      { role: "user", content: `${aboutThePerson(person)}Conversation so far:\n${transcript(messages)}` },
+    ],
   });
   const clean = reply.replace(/^companion:\s*/i, "").trim();
   // Guard: listening replies are short; anything long is probably advice.

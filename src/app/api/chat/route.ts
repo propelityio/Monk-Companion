@@ -13,11 +13,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { messages, locale, region } = (body ?? {}) as {
+  const { messages, locale, region, profile } = (body ?? {}) as {
     messages?: ChatMessage[];
     locale?: string;
     region?: string;
+    profile?: { name?: unknown; intention?: unknown } | null;
   };
+  // Only the name and intention are used; the email stays in the browser.
+  const short = (v: unknown, max: number) =>
+    typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : undefined;
+  const person = profile
+    ? { name: short(profile.name, 60), intention: short(profile.intention, 300) }
+    : null;
   if (!Array.isArray(messages)) {
     return NextResponse.json({ error: "messages array required" }, { status: 400 });
   }
@@ -36,6 +43,7 @@ export async function POST(request: Request) {
     await answer(safe, {
       locale: toLocale(locale),
       region: typeof region === "string" && /^[A-Za-z]{2}$/.test(region) ? region.toUpperCase() : null,
+      person,
     }),
   );
 }

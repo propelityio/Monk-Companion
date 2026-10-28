@@ -43,10 +43,11 @@ export default function Home() {
             </p>
           </div>
           <div>
-            <h2 className="font-serif text-xl text-[var(--maroon)]">Curated path</h2>
+            <h2 className="font-serif text-xl text-[var(--maroon)]">Personal path</h2>
             <p className="mt-2 leading-7 text-[var(--muted)]">
-              Share a preferred name and email when you want the companion to
-              recognize you and remember an intention.
+              Share the name you&apos;d like to be called, and an intention if you
+              wish. The companion will greet you by name and keep your intention
+              in mind.
             </p>
           </div>
           <div>
