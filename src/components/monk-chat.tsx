@@ -635,8 +635,11 @@ let currentAudio: HTMLAudioElement | null = null;
 let progressFrame = 0;
 let estimateTimer = 0;
 
+let speechRun = 0; // bumped to cancel speech that is still being prepared
+
 function stopSpeaking() {
   if (typeof window === "undefined") return;
+  speechRun++;
   window.cancelAnimationFrame(progressFrame);
   window.clearInterval(estimateTimer);
   currentAudio?.pause();
@@ -685,67 +688,145 @@ function spokenCount(starts: number[], t: number): number {
   return lo;
 }
 
+/**
+ * Split a reply into parts that can be voiced separately: paragraphs, with a
+ * long first paragraph split after its first sentence or two, so the Monk can
+ * start speaking while the rest is still being prepared.
+ */
+export function speechParts(text: string): { text: string; offset: number }[] {
+  const parts: { text: string; offset: number }[] = [];
+  const re = /\S[\s\S]*?(?=\n\s*\n|$)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m[0].trim()) parts.push({ text: m[0].trim(), offset: m.index });
+  }
+  const first = parts[0];
+  if (first && first.text.length > 220) {
+    const cut = first.text.slice(80).search(/[.!?。！？]["'”’)]?\s/);
+    if (cut >= 0 && 80 + cut + 2 < first.text.length - 40) {
+      const at = 80 + cut + 1;
+      const head = first.text.slice(0, at).trim();
+      const tail = first.text.slice(at).trim();
+      parts.splice(0, 1, { text: head, offset: first.offset }, {
+        text: tail,
+        offset: first.offset + first.text.indexOf(tail, at),
+      });
+    }
+  }
+  return parts.length ? parts : [{ text, offset: 0 }];
+}
+
+type VoicedPart = { audio: string; starts: number[] };
+
+/** Play one voiced part; report progress in characters of the whole text. */
+function playPart(
+  data: VoicedPart,
+  part: { text: string; offset: number },
+  hooks: SpeakHooks,
+  first: boolean,
+  run: number,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const bytes = Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
+    const audio = new Audio(url);
+    const starts = data.starts ?? [];
+    const scale = starts.length ? part.text.length / starts.length : 1;
+    let last = -1;
+    // Updated on every frame for smoothness, and on the player's own progress
+    // events too (frames pause when the page isn't in front).
+    const update = () => {
+      if (currentAudio !== audio) return;
+      const t = audio.currentTime + 0.05;
+      const within = starts.length
+        ? Math.round(spokenCount(starts, t) * scale)
+        : audio.duration
+          ? Math.round((t / audio.duration) * part.text.length)
+          : 0;
+      const chars = part.offset + within;
+      if (chars !== last) {
+        last = chars;
+        hooks.onProgress?.(chars);
+      }
+    };
+    const tick = () => {
+      update();
+      if (currentAudio === audio && !audio.paused && !audio.ended) {
+        progressFrame = window.requestAnimationFrame(tick);
+      }
+    };
+    let done = false;
+    const finish = (ok: boolean) => {
+      if (done) return;
+      done = true;
+      URL.revokeObjectURL(url);
+      resolve(ok && run === speechRun);
+    };
+    audio.ontimeupdate = update;
+    audio.onplay = () => {
+      if (first) hooks.onStart?.();
+      progressFrame = window.requestAnimationFrame(tick);
+    };
+    audio.onended = () => {
+      hooks.onProgress?.(part.offset + part.text.length);
+      finish(true);
+    };
+    audio.onpause = () => {
+      if (!audio.ended) finish(false); // stopped by the visitor or by new speech
+    };
+    warmVoice(audio);
+    currentAudio = audio;
+    audio.play().catch(() => finish(false));
+  });
+}
+
 async function speak(text: string, locale: Locale, hooks: SpeakHooks = {}) {
   const clean = text.replace(/\s*\[\d+(?:,\s*\d+)*\]/g, "").trim();
   if (!clean || typeof window === "undefined") return;
   stopSpeaking();
+  const run = speechRun;
 
   if (premiumVoice !== false) {
-    try {
-      const res = await fetch("/api/speak", {
+    const parts = speechParts(clean);
+    const voice = (i: number): Promise<VoicedPart | null> =>
+      fetch("/api/speak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: clean }),
-      });
-      if (res.status === 501) premiumVoice = false; // not set up: stop asking
-      if (res.ok) {
-        premiumVoice = true;
-        const data = (await res.json()) as { audio: string; starts: number[] };
-        const bytes = Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0));
-        const url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
-        const audio = new Audio(url);
-        const starts = data.starts ?? [];
-        // Timings are per character of what was spoken; map them onto the text.
-        const scale = starts.length ? clean.length / starts.length : 1;
-        let last = -1;
-        // Updated on every frame for smoothness, and on the player's own
-        // progress events too (frames pause when the page isn't in front).
-        const update = () => {
-          if (currentAudio !== audio) return;
-          const t = audio.currentTime + 0.05;
-          const chars = starts.length
-            ? Math.round(spokenCount(starts, t) * scale)
-            : audio.duration
-              ? Math.round((t / audio.duration) * clean.length)
-              : 0;
-          if (chars !== last) {
-            last = chars;
-            hooks.onProgress?.(chars);
-          }
-        };
-        const tick = () => {
-          update();
-          if (currentAudio === audio && !audio.paused && !audio.ended) {
-            progressFrame = window.requestAnimationFrame(tick);
-          }
-        };
-        audio.ontimeupdate = update;
-        audio.onplay = () => {
-          hooks.onStart?.();
-          progressFrame = window.requestAnimationFrame(tick);
-        };
-        audio.onended = () => {
-          URL.revokeObjectURL(url);
-          hooks.onProgress?.(clean.length);
-          hooks.onEnd?.();
-        };
-        warmVoice(audio);
-        currentAudio = audio;
-        await audio.play();
+        body: JSON.stringify({
+          text: parts[i].text,
+          // Neighbouring text keeps the intonation flowing across parts.
+          previous: parts[i - 1]?.text,
+          next: parts[i + 1]?.text,
+        }),
+      })
+        .then(async (res) => {
+          if (res.status === 501) premiumVoice = false; // not set up: stop asking
+          return res.ok ? ((await res.json()) as VoicedPart) : null;
+        })
+        .catch(() => null);
+
+    // Prepare the next part while the current one is playing.
+    let upcoming = voice(0);
+    let played = false;
+    for (let i = 0; i < parts.length; i++) {
+      const data = await upcoming;
+      if (run !== speechRun) return; // cancelled meanwhile
+      if (i + 1 < parts.length) upcoming = voice(i + 1);
+      if (!data) {
+        if (i === 0) break; // no premium voice at all: use the browser's
+        hooks.onProgress?.(clean.length); // a later part failed: show the rest
+        hooks.onEnd?.();
         return;
       }
-    } catch {
-      /* fall back to the browser voice */
+      premiumVoice = true;
+      played = true;
+      const ok = await playPart(data, parts[i], hooks, i === 0, run);
+      if (!ok) return;
+    }
+    if (played) {
+      hooks.onProgress?.(clean.length);
+      hooks.onEnd?.();
+      return;
     }
   }
   browserSpeak(clean, locale, hooks);

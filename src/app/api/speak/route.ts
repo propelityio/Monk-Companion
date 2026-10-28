@@ -13,7 +13,7 @@ const SPEED = Number(process.env.ELEVENLABS_SPEED ?? 0.9);
 
 const MAX_CHARS = 1500; // a full reply is usually 600–1,200 characters
 const WINDOW_MS = 10 * 60 * 1000;
-const MAX_PER_WINDOW = 40;
+const MAX_PER_WINDOW = 150; // replies are voiced in several parts
 const hits = new Map<string, number[]>(); // best-effort, per server instance
 
 function rateLimited(ip: string): boolean {
@@ -33,15 +33,21 @@ export async function POST(request: Request) {
   }
 
   let text = "";
+  let previous = "";
+  let next = "";
   let speed = SPEED;
   let testSettings: Record<string, number | boolean> = {};
   try {
     const body = (await request.json()) as {
       text?: unknown;
+      previous?: unknown;
+      next?: unknown;
       speed?: unknown;
       settings?: Record<string, number | boolean>;
     };
     text = typeof body?.text === "string" ? body.text : "";
+    previous = typeof body?.previous === "string" ? body.previous.slice(-500) : "";
+    next = typeof body?.next === "string" ? body.next.slice(0, 500) : "";
     // Local testing only: try other speeds without redeploying.
     if (process.env.NODE_ENV === "development" && typeof body?.speed === "number") {
       speed = Math.min(1.2, Math.max(0.7, body.speed));
@@ -68,6 +74,9 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         text,
+        // Surrounding text, so a reply voiced in parts still sounds continuous.
+        ...(previous ? { previous_text: previous } : {}),
+        ...(next ? { next_text: next } : {}),
         model_id: process.env.ELEVENLABS_MODEL ?? "eleven_multilingual_v2",
         voice_settings: {
           stability: 0.75, // steady, unhurried delivery
