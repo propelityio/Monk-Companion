@@ -546,48 +546,49 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
   en: {
     empty: "Sit for a moment and say what is here. You may type or speak. No account is needed.",
     noTeaching:
-      "I do not yet have a recorded teaching from Kalden that answers this. As more talks and transcripts are added, I will cite them instead of inventing a reply.",
+      "I don’t yet have a recorded teaching that speaks to this. As more talks and transcripts are added, I will share them rather than invent an answer.",
     error: "I could not reach the teachings just now. Please try again in a moment.",
   },
   es: {
     empty: "Siéntate un momento y di lo que está aquí. Puedes escribir o hablar. No necesitas una cuenta.",
     noTeaching:
-      "Todavía no tengo una enseñanza grabada de Kalden que responda a esto. A medida que se añadan más charlas y transcripciones, las citaré en lugar de inventar una respuesta.",
+      "Todavía no tengo una enseñanza grabada que hable de esto. A medida que se añadan más charlas y transcripciones, las compartiré en lugar de inventar una respuesta.",
     error: "No pude acceder a las enseñanzas en este momento. Inténtalo de nuevo en un momento.",
   },
   pt: {
     empty: "Sente-se por um momento e diga o que está aqui. Você pode escrever ou falar. Não é preciso ter conta.",
     noTeaching:
-      "Ainda não tenho um ensinamento gravado de Kalden que responda a isso. À medida que mais palestras e transcrições forem adicionadas, vou citá-las em vez de inventar uma resposta.",
+      "Ainda não tenho um ensinamento gravado que fale sobre isso. À medida que mais palestras e transcrições forem adicionadas, vou compartilhá-las em vez de inventar uma resposta.",
     error: "Não consegui acessar os ensinamentos agora. Tente novamente em um momento.",
   },
   fr: {
     empty: "Asseyez-vous un instant et dites ce qui est là. Vous pouvez écrire ou parler. Aucun compte n’est nécessaire.",
     noTeaching:
-      "Je n’ai pas encore d’enseignement enregistré de Kalden qui réponde à cela. Lorsque d’autres enseignements et transcriptions seront ajoutés, je les citerai au lieu d’inventer une réponse.",
+      "Je n’ai pas encore d’enseignement enregistré qui parle de cela. Lorsque d’autres enseignements et transcriptions seront ajoutés, je les partagerai plutôt que d’inventer une réponse.",
     error: "Je n’ai pas pu accéder aux enseignements pour l’instant. Réessayez dans un moment.",
   },
   de: {
     empty: "Halten Sie einen Moment inne und sagen Sie, was gerade da ist. Sie können schreiben oder sprechen. Ein Konto ist nicht nötig.",
     noTeaching:
-      "Ich habe noch keine aufgezeichnete Unterweisung von Kalden, die darauf antwortet. Sobald weitere Vorträge und Abschriften hinzukommen, werde ich sie zitieren, statt eine Antwort zu erfinden.",
+      "Ich habe noch keine aufgezeichnete Unterweisung, die darauf eingeht. Sobald weitere Vorträge und Abschriften hinzukommen, teile ich sie, statt eine Antwort zu erfinden.",
     error: "Ich konnte die Unterweisungen gerade nicht erreichen. Bitte versuchen Sie es gleich noch einmal.",
   },
   it: {
     empty: "Siediti un momento e di’ ciò che è qui. Puoi scrivere o parlare. Non serve un account.",
     noTeaching:
-      "Non ho ancora un insegnamento registrato di Kalden che risponda a questo. Man mano che verranno aggiunti altri discorsi e trascrizioni, li citerò invece di inventare una risposta.",
+      "Non ho ancora un insegnamento registrato che parli di questo. Man mano che verranno aggiunti altri discorsi e trascrizioni, li condividerò invece di inventare una risposta.",
     error: "Non sono riuscito a raggiungere gli insegnamenti in questo momento. Riprova tra poco.",
   },
   zh: {
     empty: "静坐片刻，说出此刻心中所有。你可以打字或说话，无需账户。",
-    noTeaching: "目前还没有 Kalden 录制的教法能回答这个问题。随着更多开示和文字稿加入，我会引用它们，而不会编造回答。",
+    noTeaching:
+      "目前还没有录制的教法谈到这个问题。随着更多开示和文字稿加入，我会与你分享，而不会编造回答。",
     error: "刚才无法读取教法，请稍后再试。",
   },
   ja: {
     empty: "少しのあいだ座って、今ここにあることを言葉にしてみてください。文字でも声でも構いません。アカウントは不要です。",
     noTeaching:
-      "これに答えるカルデンの録音された教えは、まだありません。法話や書き起こしが増えれば、答えを作り出すのではなく、それを引用してお伝えします。",
+      "これについて語る録音された教えは、まだありません。法話や書き起こしが増えれば、答えを作り出すのではなく、それをお伝えします。",
     error: "今は教えにアクセスできませんでした。少ししてからもう一度お試しください。",
   },
 };

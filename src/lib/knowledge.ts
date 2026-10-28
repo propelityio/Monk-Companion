@@ -18,7 +18,7 @@ export const KNOWLEDGE_CHUNKS: KnowledgeChunk[] = [
     id: "foundation-welcome",
     title: "How this companion works",
     sourceType: "foundation",
-    text: "Monk Companion is offered by Awaythroughfoundation. You may speak or type freely with no account. Answers are meant to rest on Kalden's recorded and written teachings. Until those sources are loaded, the companion will say when it does not yet have a talk to cite.",
+    text: "Monk Companion is offered by Awaythroughfoundation. You may speak or type freely with no account. Answers rest on recorded and written Buddhist teachings from monks and teachers. When no teaching speaks to a question, the companion says so instead of inventing one.",
     tags: ["welcome", "about", "guest", "account"],
   },
   {
@@ -46,8 +46,8 @@ export const KNOWLEDGE_CHUNKS: KnowledgeChunk[] = [
     id: "foundation-knowledge",
     title: "Knowledge still arriving",
     sourceType: "foundation",
-    text: "The lasting knowledge base will be Kalden's YouTube talks, their transcriptions, and written text, each cited by title and timestamp. Those sources are not in this first website yet. When a question needs a teaching that is not loaded, the honest reply is that the talk is not yet here.",
-    tags: ["youtube", "transcript", "teaching", "knowledge", "kalden"],
+    text: "The knowledge base is made of recorded talks, their transcriptions, and written teachings from Buddhist monks and teachers, each linked to its source. More are added over time. When a question needs a teaching that is not yet here, the honest reply is to say so.",
+    tags: ["youtube", "transcript", "teaching", "knowledge", "sources"],
   },
 ];
 

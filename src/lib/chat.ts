@@ -141,7 +141,7 @@ async function findPassages(
     model: MODELS.search,
     maxTokens: 200,
     system:
-      "You help a Buddhist teaching companion find relevant passages in a database of teachings by Ven. Kalden (English, Spanish, Portuguese). " +
+      "You help a Buddhist teaching companion find relevant passages in a database of teachings by Buddhist monks and teachers (English, Spanish, Portuguese). " +
       "Read the conversation and focus on the person's LATEST message, using earlier turns only for context " +
       '(e.g. if the companion asked "How are you feeling?" and the person said "stressed about work", search for stress). ' +
       'Reply with JSON only, no prose: {"intent": "...", "en": "...", "es": "...", "pt": "..."}. ' +
@@ -160,7 +160,8 @@ export function parseIntent(raw: string): Intent {
   return (m?.[1] as Intent | undefined) ?? "question";
 }
 
-const COMPANION = "You are Monk Companion, offered by Awaythroughfoundation. You walk alongside people with the teachings of Ven. Kalden, a Buddhist monk. You are not Kalden and never speak as him.";
+const COMPANION =
+  "You are Monk Companion, offered by Awaythroughfoundation. You walk alongside people with the recorded teachings of Buddhist monks and teachers. You are not a monk and never claim to be one.";
 
 async function groundedAnswer(
   messages: ChatMessage[],
@@ -181,17 +182,18 @@ async function groundedAnswer(
       "2. Cite each teaching point with its passage number in square brackets, like [2].",
       "3. You may, without a citation: briefly acknowledge what the person shared in their own terms (one short sentence), and end with ONE gentle, open follow-up question that invites them to reflect or say more. Never put new teaching into those uncited sentences.",
       `4. If the passages do not genuinely relate to what the person said, reply with exactly ${NO_ANSWER} and nothing else.`,
-      '5. Lines starting with "Participant:" are students speaking, not Kalden. Never present them as his teaching.',
-      "6. Reply in the language of the person's latest message, even if the passages are in another language. Keep Kalden's meaning; do not invent wording and present it as a quote.",
-      "7. Be warm, plain and brief, like a kind monk speaking: 2 to 4 short paragraphs including the closing question.",
-      "8. You are not a therapist or doctor. If the person seems in danger, tell them to contact emergency services or a crisis line (988 in the US).",
+      '5. Lines starting with "Participant:" are students speaking, not the teacher. Never present them as teaching.',
+      "6. Reply in the language of the person's latest message, even if the passages are in another language. Keep the teaching's meaning; do not invent wording and present it as a quote.",
+      "7. NEVER name any teacher, monk or speaker, even if a name appears in the passages. Say \"the teaching\", \"this teaching\" or \"Buddhist teachers\" instead.",
+      "8. Be warm, plain and brief: 2 to 4 short paragraphs including the closing question.",
+      "9. You are not a therapist or doctor. If the person seems in danger, tell them to contact emergency services or a crisis line (988 in the US).",
     ].join("\n"),
     messages: [
       {
         role: "user",
         content:
           `Conversation so far:\n${transcript(messages)}\n\n===\n\n` +
-          `Passages from Ven. Kalden's recorded teachings:\n\n${numbered}\n\n===\n\n` +
+          `Passages from recorded Buddhist teachings:\n\n${numbered}\n\n===\n\n` +
           `Write the Companion's next reply to the person's latest message.`,
       },
     ],
@@ -201,46 +203,31 @@ async function groundedAnswer(
   const cited = citedNumbers(reply, passages.length);
   if (cited.length === 0) return null; // ungrounded answer: refuse rather than show it
 
-  // One chip per cited transcript; renumber [n] markers to match the chips.
-  const chipFor = new Map<number, number>();
-  const chipBySource = new Map<string, number>();
+  // One source link per cited transcript, in the order first cited.
+  const seen = new Set<string>();
   const citations: ChatCitation[] = [];
   for (const n of cited) {
     const p = passages[n - 1];
-    let chip = chipBySource.get(p.source_id);
-    if (chip === undefined) {
-      citations.push({
-        id: p.source_id,
-        title: p.title,
-        sourceType: "transcript",
-        url: p.video_url ?? undefined,
-      });
-      chip = citations.length;
-      chipBySource.set(p.source_id, chip);
-    }
-    chipFor.set(n, chip);
+    if (seen.has(p.source_id)) continue;
+    seen.add(p.source_id);
+    citations.push({
+      id: p.source_id,
+      title: p.title,
+      sourceType: "transcript",
+      url: p.video_url ?? undefined,
+    });
   }
-  const content = reply
-    .replace(/\[(\d+(?:\s*,\s*\d+)*)\]/g, (_, group: string) => {
-      const chips = [
-        ...new Set(
-          group
-            .split(",")
-            .map((x) => chipFor.get(Number(x.trim())))
-            .filter((x): x is number => x !== undefined),
-        ),
-      ];
-      return chips.length ? `[${chips.join(", ")}]` : "";
-    })
-    .replace(/(\[\d+(?:, \d+)*\])(\s*\1)+/g, "$1")
-    .trim();
+
+  // The [n] markers were only for checking grounding; readers see clean text
+  // with the sources listed underneath.
+  const content = cleanForDisplay(await withoutTeacherNames(reply));
   return { content, citations, crisis: false };
 }
 
 /**
  * When someone shares how they are and no teaching fits, listen instead of
  * refusing: acknowledge in a sentence and invite them to say more. No teaching,
- * advice or practice is allowed here, so nothing is presented as Kalden's.
+ * advice or practice is allowed here, so nothing is presented as a teaching.
  */
 async function listeningReply(messages: ChatMessage[]): Promise<ChatReply | null> {
   const reply = await claude({
@@ -250,7 +237,7 @@ async function listeningReply(messages: ChatMessage[]): Promise<ChatReply | null
       COMPANION,
       "Write the Companion's next reply in this conversation. You have NO teachings available for this turn.",
       "Write at most two short sentences: a warm, plain acknowledgement of what the person said, then ONE open question inviting them to share more or to say what they would like to explore.",
-      "Do NOT give advice, teachings, practices, quotes, explanations or Buddhist ideas of any kind. Do not mention Kalden, the teachings, or that anything is missing.",
+      "Do NOT give advice, teachings, practices, quotes, explanations or Buddhist ideas of any kind. Do not mention any teacher, the teachings, or that anything is missing.",
       "Reply in the language of the person's latest message. Output only the reply.",
     ].join("\n"),
     messages: [{ role: "user", content: `Conversation so far:\n${transcript(messages)}` }],
@@ -259,4 +246,55 @@ async function listeningReply(messages: ChatMessage[]): Promise<ChatReply | null
   // Guard: listening replies are short; anything long is probably advice.
   if (!clean || clean.length > 320 || /\[\d+\]/.test(clean)) return null;
   return { content: clean, citations: [], crisis: false };
+}
+
+// ---------- display clean-up ----------
+
+/** Names of the teachers in the knowledge base, never shown to visitors. */
+const TEACHER_NAMES = (process.env.TEACHER_NAMES ?? "Kalden,カルデン")
+  .split(",")
+  .map((n) => n.trim())
+  .filter(Boolean);
+
+export function mentionsTeacher(text: string): boolean {
+  const lower = text.toLowerCase();
+  return TEACHER_NAMES.some((n) => lower.includes(n.toLowerCase()));
+}
+
+/** Remove [n] citation markers and tidy the spacing they leave behind. */
+export function cleanForDisplay(text: string): string {
+  return text
+    .replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, "")
+    .replace(/[ \t]+([.,;:!?。、])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+/**
+ * Backstop for the "never name a teacher" rule: if a reply still names one,
+ * have it rewritten without the name; if that fails, replace the name plainly.
+ */
+async function withoutTeacherNames(text: string): Promise<string> {
+  if (!mentionsTeacher(text)) return text;
+  try {
+    const rewritten = await claude({
+      model: MODELS.search,
+      maxTokens: 900,
+      system:
+        "Rewrite the text so that it names no teacher, monk or speaker. Replace phrases like \"Ven. X teaches\" with \"the teaching says\" or \"Buddhist teachers say\", in the same language. Change nothing else: keep wording, meaning and any [n] markers. Output only the rewritten text.",
+      messages: [{ role: "user", content: text }],
+    });
+    if (rewritten && !mentionsTeacher(rewritten)) return rewritten;
+  } catch {
+    /* fall through */
+  }
+  let out = text;
+  for (const name of TEACHER_NAMES) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const named = `(?:Ven(?:erable)?\\.?\\s+)?${escaped}`;
+    out = out
+      .replace(new RegExp(`${named}['’]s`, "gi"), "the teacher’s")
+      .replace(new RegExp(named, "gi"), "the teacher");
+  }
+  return out.replace(/(^|[.!?]\s+)the teacher/g, (_, lead: string) => `${lead}The teacher`);
 }

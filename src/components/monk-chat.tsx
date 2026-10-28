@@ -302,9 +302,8 @@ export function MonkChat() {
             <p className="whitespace-pre-wrap leading-7">{message.content}</p>
             {message.citations && message.citations.length > 0 ? (
               <ul className="mt-2 flex flex-wrap gap-2">
-                {message.citations.map((c, i) => {
-                  const label =
-                    c.sourceType === "foundation" ? c.title : `[${i + 1}] ${c.title}`;
+                {message.citations.map((c) => {
+                  const label = c.title;
                   return (
                     <li
                       key={c.id}
