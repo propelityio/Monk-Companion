@@ -125,8 +125,8 @@ export function retrieve(query: string, limit = 3): KnowledgeChunk[] {
 }
 
 const CRISIS_PHRASES = [
-  "suicide",
-  "suicidal",
+  // English
+  "suicid", // suicide, suicidal; also matches suicidio, suicídio, suicidaire, suicidarmi
   "kill myself",
   "want to die",
   "end my life",
@@ -138,6 +138,48 @@ const CRISIS_PHRASES = [
   "don't want to live",
   "dont want to live",
   "don't want to be alive",
+  // Spanish
+  "quiero morir",
+  "matarme",
+  "quitarme la vida",
+  "no quiero vivir",
+  "hacerme daño",
+  "acabar con todo",
+  // Portuguese
+  "quero morrer",
+  "me matar",
+  "tirar minha vida",
+  "tirar a minha vida",
+  "não quero viver",
+  "nao quero viver",
+  "me machucar",
+  // French
+  "envie de mourir",
+  "me tuer",
+  "en finir",
+  "mettre fin à ma vie",
+  "me faire du mal",
+  // German
+  "suizid",
+  "umbringen",
+  "nicht mehr leben",
+  "sterben will",
+  "mir etwas antun",
+  // Italian
+  "voglio morire",
+  "uccidermi",
+  "farla finita",
+  "togliermi la vita",
+  // Chinese
+  "自杀",
+  "自殺",
+  "想死",
+  "不想活",
+  "结束生命",
+  // Japanese
+  "死にたい",
+  "消えたい",
+  "自傷",
 ];
 
 export function isCrisis(query: string): boolean {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { answer, type ChatMessage } from "@/lib/chat";
+import { toLocale } from "@/lib/i18n";
 
 // Two model calls plus a database search; allow time for both.
 export const maxDuration = 60;
@@ -12,7 +13,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const messages = (body as { messages?: ChatMessage[] }).messages;
+  const { messages, locale, region } = (body ?? {}) as {
+    messages?: ChatMessage[];
+    locale?: string;
+    region?: string;
+  };
   if (!Array.isArray(messages)) {
     return NextResponse.json({ error: "messages array required" }, { status: 400 });
   }
@@ -27,5 +32,10 @@ export async function POST(request: Request) {
     .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))
     .slice(-20);
 
-  return NextResponse.json(await answer(safe));
+  return NextResponse.json(
+    await answer(safe, {
+      locale: toLocale(locale),
+      region: typeof region === "string" && /^[A-Za-z]{2}$/.test(region) ? region.toUpperCase() : null,
+    }),
+  );
 }

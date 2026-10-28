@@ -2,7 +2,9 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { ChatCitation, ChatMessage } from "@/lib/chat";
+import { LOCALE_NAMES, LOCALES, SPEECH_LANG, UI, toLocale, type Locale } from "@/lib/i18n";
 import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib/profile";
+import { detectRegion, setLocale, useGreetingMoment, useLocale } from "@/lib/use-prefs";
 
 type SpeechRec = {
   lang: string;
@@ -23,14 +25,11 @@ declare global {
 
 type DisplayMessage = ChatMessage & { citations?: ChatCitation[] };
 
-const OPENING: DisplayMessage = {
-  role: "assistant",
-  content:
-    "You may speak or write. No login is needed. If you want a path that remembers you, share a name and email when you are ready.",
-};
-
 export function MonkChat() {
-  const [messages, setMessages] = useState<DisplayMessage[]>([OPENING]);
+  const locale = useLocale();
+  const t = UI[locale];
+  const moment = useGreetingMoment();
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
@@ -52,6 +51,10 @@ export function MonkChat() {
   }, []);
 
   useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
+  useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
 
@@ -71,6 +74,8 @@ export function MonkChat() {
         body: JSON.stringify({
           messages: nextMessages.map(({ role, content }) => ({ role, content })),
           profile,
+          locale,
+          region: detectRegion(),
         }),
       });
       const data = (await res.json()) as {
@@ -79,15 +84,15 @@ export function MonkChat() {
       };
       const reply: DisplayMessage = {
         role: "assistant",
-        content: data.content ?? "I could not answer just then. Try again in a moment.",
+        content: data.content ?? t.replyFailed,
         citations: data.citations,
       };
       setMessages([...nextMessages, reply]);
-      if (speakReplies) speak(reply.content);
+      if (speakReplies) void speak(reply.content, locale);
     } catch {
       setMessages([
         ...nextMessages,
-        { role: "assistant", content: "The connection dropped. Please try again." },
+        { role: "assistant", content: t.connectionDropped },
       ]);
     } finally {
       setBusy(false);
@@ -102,7 +107,7 @@ export function MonkChat() {
   function toggleListen() {
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Ctor) {
-      setInput((prev) => prev || "Voice input is not available in this browser. You can still type.");
+      setInput((prev) => prev || t.voiceUnavailable);
       return;
     }
     if (listening) {
@@ -111,7 +116,7 @@ export function MonkChat() {
       return;
     }
     const rec = new Ctor();
-    rec.lang = "en-US";
+    rec.lang = SPEECH_LANG[locale];
     rec.continuous = false;
     rec.interimResults = false;
     rec.onresult = (event) => {
@@ -141,28 +146,47 @@ export function MonkChat() {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-3 text-sm">
         <div>
-          <p className="font-medium">Monk Chat</p>
+          <p className="font-medium">{t.chatTitle}</p>
           <p className="text-[var(--muted)]">
-            {profile
-              ? `Curated for ${profile.name}`
-              : "Guest conversation · no account required"}
+            {profile ? t.curatedFor(profile.name) : t.guest}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <label className="flex items-center gap-2 text-[var(--muted)]">
+            <span className="sr-only">{t.language}</span>
+            <select
+              aria-label={t.language}
+              value={locale}
+              onChange={(e) => {
+                stopSpeaking();
+                setLocale(toLocale(e.target.value));
+              }}
+              className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2 py-1 text-[var(--ink)]"
+            >
+              {LOCALES.map((l) => (
+                <option key={l} value={l}>
+                  {LOCALE_NAMES[l]}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="flex items-center gap-2 text-[var(--muted)]">
             <input
               type="checkbox"
               checked={speakReplies}
-              onChange={(e) => setSpeakReplies(e.target.checked)}
+              onChange={(e) => {
+                if (!e.target.checked) stopSpeaking();
+                setSpeakReplies(e.target.checked);
+              }}
             />
-            Speak replies
+            {t.speakReplies}
           </label>
           <button
             type="button"
             className="rounded-full border border-[var(--line)] px-3 py-1 hover:bg-[var(--paper-strong)]"
             onClick={() => setShowProfile((v) => !v)}
           >
-            {profile ? "Path" : "Curated path"}
+            {profile ? t.path : t.curatedPath}
           </button>
         </div>
       </div>
@@ -173,12 +197,11 @@ export function MonkChat() {
           className="border-b border-[var(--line)] bg-[var(--paper-strong)] px-5 py-4"
         >
           <p className="mb-3 max-w-xl text-sm text-[var(--muted)]">
-            Optional. Name and email are enough for us to recognize you. Stored in this
-            browser until a real identity service is added.
+            {t.profileIntro}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm">
-              Preferred name
+              {t.name}
               <input
                 className="mt-1 w-full rounded-md border border-[var(--line)] bg-[var(--paper)] px-3 py-2"
                 value={form.name}
@@ -187,7 +210,7 @@ export function MonkChat() {
               />
             </label>
             <label className="text-sm">
-              Email
+              {t.email}
               <input
                 type="email"
                 className="mt-1 w-full rounded-md border border-[var(--line)] bg-[var(--paper)] px-3 py-2"
@@ -197,12 +220,12 @@ export function MonkChat() {
               />
             </label>
             <label className="text-sm sm:col-span-2">
-              Intention (optional)
+              {t.intention}
               <input
                 className="mt-1 w-full rounded-md border border-[var(--line)] bg-[var(--paper)] px-3 py-2"
                 value={form.intention}
                 onChange={(e) => setForm({ ...form, intention: e.target.value })}
-                placeholder="What are you hoping to tend?"
+                placeholder={t.intentionPlaceholder}
               />
             </label>
           </div>
@@ -211,7 +234,7 @@ export function MonkChat() {
               type="submit"
               className="rounded-full bg-[var(--ink)] px-4 py-2 text-sm text-[var(--paper)]"
             >
-              Save
+              {t.save}
             </button>
             {profile ? (
               <button
@@ -223,7 +246,7 @@ export function MonkChat() {
                   setForm({ name: "", email: "", intention: "" });
                 }}
               >
-                Forget this browser
+                {t.forget}
               </button>
             ) : null}
           </div>
@@ -231,13 +254,27 @@ export function MonkChat() {
       ) : null}
 
       <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-6">
+        <article className="mr-8 sm:mr-24">
+          <p className="mb-1 text-xs uppercase tracking-wide text-[var(--muted)]">{t.companion}</p>
+          {moment ? (
+            <p className="leading-7">
+              <span className="font-medium">
+                {withName(t.greetings[moment.time].hello, profile?.name)}
+              </span>{" "}
+              {t.greetings[moment.time].questions[moment.variant]}
+            </p>
+          ) : (
+            <p className="leading-7 text-[var(--muted)]">…</p>
+          )}
+          <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{t.invitation}</p>
+        </article>
         {messages.map((message, i) => (
           <article
             key={`${message.role}-${i}`}
             className={message.role === "user" ? "ml-8 sm:ml-24" : "mr-8 sm:mr-24"}
           >
             <p className="mb-1 text-xs uppercase tracking-wide text-[var(--muted)]">
-              {message.role === "user" ? "You" : "Companion"}
+              {message.role === "user" ? t.you : t.companion}
             </p>
             <p className="whitespace-pre-wrap leading-7">{message.content}</p>
             {message.citations && message.citations.length > 0 ? (
@@ -269,7 +306,7 @@ export function MonkChat() {
             ) : null}
           </article>
         ))}
-        {busy ? <p className="text-sm text-[var(--muted)]">Listening inwardly…</p> : null}
+        {busy ? <p className="text-sm text-[var(--muted)]">{t.thinking}</p> : null}
       </div>
 
       <form onSubmit={onSubmit} className="border-t border-[var(--line)] px-5 py-4">
@@ -284,7 +321,7 @@ export function MonkChat() {
                 void send(input);
               }
             }}
-            placeholder="Speak or type what is present…"
+            placeholder={t.placeholder}
             rows={2}
           />
           <button
@@ -296,14 +333,14 @@ export function MonkChat() {
                 : "border-[var(--line)]"
             }`}
           >
-            {listening ? "Stop" : "Speak"}
+            {listening ? t.stop : t.speak}
           </button>
           <button
             type="submit"
             disabled={busy}
             className="h-[52px] rounded-full bg-[var(--ink)] px-5 text-sm text-[var(--paper)] disabled:opacity-50"
           >
-            Send
+            {t.send}
           </button>
         </div>
       </form>
@@ -311,10 +348,70 @@ export function MonkChat() {
   );
 }
 
-function speak(text: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text.replace(/\s*\[\d+(?:,\s*\d+)*\]/g, ""));
-  utterance.rate = 0.95;
+/** "Good morning." -> "Good morning, Ana." (keeps the language's full stop). */
+function withName(hello: string, name?: string): string {
+  if (!name) return hello;
+  const stop = hello.endsWith("。") ? "。" : ".";
+  return `${hello.replace(/[.。]$/, "")}${stop === "。" ? "、" : ", "}${name}${stop}`;
+}
+
+// ---------- spoken replies ----------
+// Uses the calm ElevenLabs voice when the site has it configured; otherwise a
+// slower, lower version of the browser's own voice in the chosen language.
+
+let premiumVoice: boolean | null = null; // unknown until the first try
+let currentAudio: HTMLAudioElement | null = null;
+
+function stopSpeaking() {
+  currentAudio?.pause();
+  currentAudio = null;
+  if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+}
+
+async function speak(text: string, locale: Locale) {
+  const clean = text.replace(/\s*\[\d+(?:,\s*\d+)*\]/g, "").trim();
+  if (!clean || typeof window === "undefined") return;
+  stopSpeaking();
+
+  if (premiumVoice !== false) {
+    try {
+      const res = await fetch("/api/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: clean }),
+      });
+      if (res.status === 501) premiumVoice = false; // not set up: stop asking
+      if (res.ok) {
+        premiumVoice = true;
+        const url = URL.createObjectURL(await res.blob());
+        const audio = new Audio(url);
+        audio.onended = () => URL.revokeObjectURL(url);
+        currentAudio = audio;
+        await audio.play();
+        return;
+      }
+    } catch {
+      /* fall back to the browser voice */
+    }
+  }
+  browserSpeak(clean, locale);
+}
+
+function browserSpeak(text: string, locale: Locale) {
+  if (!window.speechSynthesis) return;
+  const lang = SPEECH_LANG[locale];
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang;
+  utterance.rate = 0.82; // unhurried
+  utterance.pitch = 0.85; // a little lower and softer
+  const voices = window.speechSynthesis.getVoices().filter((v) =>
+    v.lang.toLowerCase().startsWith(locale),
+  );
+  // Prefer higher-quality voices when the device has them.
+  utterance.voice =
+    voices.find((v) => /natural|neural|premium|enhanced|google/i.test(v.name)) ??
+    voices.find((v) => v.lang === lang) ??
+    voices[0] ??
+    null;
   window.speechSynthesis.speak(utterance);
 }

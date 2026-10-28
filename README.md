@@ -25,6 +25,19 @@ Open [http://localhost:3000](http://localhost:3000).
    and answers `NO_ANSWER` when they don't fit. Uncited answers are discarded.
 5. Crisis language is checked first and always routes to 988.
 
+## Languages, greeting and voice
+
+- The chat screen follows the visitor's browser language (English, Spanish, Portuguese,
+  French, German, Italian, Chinese, Japanese) with a picker to change it. Answers follow the
+  language the person writes in, whatever it is. Strings live in `src/lib/i18n.ts`.
+- The opening greeting comes from the visitor's own clock: morning, afternoon, evening or night,
+  with a reflective question that changes daily.
+- Crisis language is detected in all of those languages; the reply names the local helpline
+  where known (US/CA 988, UK/IE/DE 116 123, FR 3114, ES 024, BR 188) and always points to
+  findahelpline.com.
+- Spoken replies use ElevenLabs when `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` are set
+  (`/api/speak`), otherwise a slower, lower browser voice.
+
 ## Knowledge base setup
 
 1. Supabase → SQL Editor → run `supabase/schema.sql` (once; safe to re-run).

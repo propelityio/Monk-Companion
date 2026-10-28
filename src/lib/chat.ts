@@ -1,4 +1,5 @@
 import { claude, MODELS } from "./anthropic";
+import { crisisReply, SERVER_TEXT, type Locale } from "./i18n";
 import { isCrisis, retrieve, type KnowledgeChunk } from "./knowledge";
 import {
   citedNumbers,
@@ -26,30 +27,28 @@ export type ChatReply = {
   crisis: boolean;
 };
 
-const CRISIS_REPLY =
-  "Please reach a human who can help right now. If you are in the United States, call or text 988. If you are elsewhere, contact local emergency services. I am a companion for teachings, not a crisis counselor.";
+export type ChatContext = {
+  locale: Locale;
+  /** Country code used only to show the right crisis line. */
+  region?: string | null;
+};
 
-const EMPTY_REPLY =
-  "Sit for a moment and say what is here. You may type or speak. No account is needed.";
-
-const NO_TEACHING_REPLY =
-  "I do not yet have a recorded teaching from Kalden that answers this. As more talks and transcripts are added, I will cite them instead of inventing a reply.";
-
-const ERROR_REPLY = "I could not reach the teachings just now. Please try again in a moment.";
+const DEFAULT_CONTEXT: ChatContext = { locale: "en", region: null };
 
 const NO_ANSWER = "NO_ANSWER";
 
 /** Synchronous replies that never need the knowledge base. */
-export function replyTo(messages: ChatMessage[]): ChatReply {
+export function replyTo(messages: ChatMessage[], ctx: ChatContext = DEFAULT_CONTEXT): ChatReply {
+  const text = SERVER_TEXT[ctx.locale];
   const query = lastUserText(messages);
-  if (!query) return { content: EMPTY_REPLY, citations: [], crisis: false };
-  if (isCrisis(query)) return { content: CRISIS_REPLY, citations: [], crisis: true };
+  if (!query) return { content: text.empty, citations: [], crisis: false };
+  if (isCrisis(query)) return { content: crisisReply(ctx.locale, ctx.region), citations: [], crisis: true };
 
   // Questions about the companion itself (login, privacy, therapy) are answered
   // from the small "about this site" notes, never presented as teachings.
   const chunks = retrieve(query);
   if (chunks.length === 0) {
-    return { content: NO_TEACHING_REPLY, citations: [], crisis: false };
+    return { content: text.noTeaching, citations: [], crisis: false };
   }
   return {
     content: chunks.map((c) => c.text).join(" "),
@@ -59,11 +58,15 @@ export function replyTo(messages: ChatMessage[]): ChatReply {
 }
 
 /** Full reply: crisis check, then the teachings database, then the site notes. */
-export async function answer(messages: ChatMessage[]): Promise<ChatReply> {
+export async function answer(
+  messages: ChatMessage[],
+  ctx: ChatContext = DEFAULT_CONTEXT,
+): Promise<ChatReply> {
+  const text = SERVER_TEXT[ctx.locale];
   const query = lastUserText(messages);
-  if (!query) return { content: EMPTY_REPLY, citations: [], crisis: false };
-  if (isCrisis(query)) return { content: CRISIS_REPLY, citations: [], crisis: true };
-  if (!knowledgeBaseConfigured()) return replyTo(messages);
+  if (!query) return { content: text.empty, citations: [], crisis: false };
+  if (isCrisis(query)) return { content: crisisReply(ctx.locale, ctx.region), citations: [], crisis: true };
+  if (!knowledgeBaseConfigured()) return replyTo(messages, ctx);
 
   try {
     const passages = await findPassages(query);
@@ -73,14 +76,38 @@ export async function answer(messages: ChatMessage[]): Promise<ChatReply> {
     }
   } catch (err) {
     console.error("[chat] knowledge base error:", err);
-    return { content: ERROR_REPLY, citations: [], crisis: false };
+    // Questions about the site itself can still be answered without the AI.
+    if (isAboutTheSite(query)) return replyTo(messages, ctx);
+    return { content: text.error, citations: [], crisis: false };
   }
 
   // Nothing in the teachings answers this. Only fall back to the site notes for
   // questions about the companion itself; otherwise say so honestly.
-  const about = retrieve(query).filter((c) => c.sourceType === "foundation" && c.id !== "foundation-knowledge");
-  if (about.length > 0 && isAboutTheSite(query)) return replyTo(messages);
-  return { content: NO_TEACHING_REPLY, citations: [], crisis: false };
+  if (isAboutTheSite(query)) return siteNote(messages, ctx);
+  return { content: text.noTeaching, citations: [], crisis: false };
+}
+
+/** Site notes are written in English; translate them for other languages. */
+async function siteNote(messages: ChatMessage[], ctx: ChatContext): Promise<ChatReply> {
+  let reply = replyTo(messages, ctx);
+  if (reply.citations.length === 0) {
+    // The notes are keyed by English words; for other languages use the general note.
+    reply = replyTo([{ role: "user", content: "login account pay free" }], ctx);
+  }
+  if (ctx.locale === "en" || reply.citations.length === 0) return reply;
+  try {
+    const translated = await claude({
+      model: MODELS.search,
+      maxTokens: 500,
+      temperature: 0,
+      system:
+        "Translate the user's text faithfully into the requested language. Output only the translation, nothing else.",
+      messages: [{ role: "user", content: `Language: ${ctx.locale}\n\n${reply.content}` }],
+    });
+    return translated ? { ...reply, content: translated } : reply;
+  } catch {
+    return reply;
+  }
 }
 
 function lastUserText(messages: ChatMessage[]): string {
@@ -88,7 +115,7 @@ function lastUserText(messages: ChatMessage[]): string {
 }
 
 function isAboutTheSite(q: string): boolean {
-  return /\b(log ?in|sign ?(up|in)|account|password|pay|cost|free|subscription|email|curated|privacy|therapy|therapist|who are you|what are you|how does this work)\b/i.test(
+  return /\b(log ?in|sign ?(up|in)|account|password|pay|cost|free|subscription|email|curated|privacy|therapy|therapist|who are you|what are you|how does this work|cuenta|contraseña|pagar|gratis|iniciar sesión|correo|terapia|conta|senha|grátis|cadastro|compte|mot de passe|gratuit|payer|konto|passwort|kostenlos|anmelden|accesso|gratuito)\b/i.test(
     q,
   );
 }
