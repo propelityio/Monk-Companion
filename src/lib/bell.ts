@@ -6,6 +6,8 @@
 
 let ctx: AudioContext | null = null;
 let bellRangAt = 0;
+let bellDone: Promise<void> = Promise.resolve();
+let finishBell: () => void = () => {};
 
 const PARTIALS: { ratio: number; gain: number; decay: number }[] = [
   { ratio: 1, gain: 1, decay: 7 },
@@ -24,6 +26,11 @@ let fileMissing = false;
 export function playBell(volume = 0.22): void {
   if (typeof window === "undefined") return;
   bellRangAt = Date.now();
+  bellDone = new Promise<void>((resolve) => {
+    finishBell = resolve;
+  });
+  // Safety net: never hold the greeting back for more than 15 seconds.
+  window.setTimeout(() => finishBell(), 15000);
   // Wake the audio engine now, inside the click, so a fallback can still sound.
   unlockAudio();
   if (fileMissing) return synthBell(volume);
@@ -37,6 +44,7 @@ export function playBell(volume = 0.22): void {
   try {
     const audio = new Audio(BELL_FILE);
     audio.volume = Math.min(1, volume * 3);
+    audio.onended = () => finishBell();
     audio.onerror = fallBack;
     void audio.play().catch(fallBack);
   } catch {
@@ -58,9 +66,11 @@ function unlockAudio(): void {
 }
 
 function synthBell(volume: number, fundamental = 262): void {
+  const longest = Math.max(...PARTIALS.map((p) => p.decay));
+  window.setTimeout(() => finishBell(), longest * 1000);
   try {
     unlockAudio();
-    if (!ctx) return;
+    if (!ctx) return finishBell();
     const now = ctx.currentTime + 0.02;
 
     const master = ctx.createGain();
@@ -85,6 +95,11 @@ function synthBell(volume: number, fundamental = 262): void {
   } catch {
     /* sound is a nicety; never block navigation */
   }
+}
+
+/** Resolves when the bell has finished ringing. */
+export function whenBellDone(): Promise<void> {
+  return bellDone;
 }
 
 /** Did the bell ring in the last few seconds (i.e. on the way into the chat)? */

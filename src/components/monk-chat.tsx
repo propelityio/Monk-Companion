@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import type { ChatCitation, ChatMessage } from "@/lib/chat";
 import { LOCALE_NAMES, LOCALES, SPEECH_LANG, UI, toLocale, type Locale } from "@/lib/i18n";
 import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib/profile";
-import { clearBell, justRangBell } from "@/lib/bell";
+import { clearBell, justRangBell, whenBellDone } from "@/lib/bell";
 import {
   detectRegion,
   getReplyMode,
@@ -70,16 +70,25 @@ export function MonkChat() {
     latest.current = { messages, send, startListening, handsFree, greetingText, locale };
   });
 
-  // Arriving by the bell: let it ring a moment, then the Monk greets aloud.
+  // Arriving by the bell: wait until it has finished ringing, then the Monk
+  // greets aloud after a short pause.
   useEffect(() => {
     if (!justRangBell() || getReplyMode() === "text") return;
-    const timer = window.setTimeout(() => {
-      if (!justRangBell(6000)) return;
-      clearBell();
-      const { greetingText: g, locale: l } = latest.current;
-      if (g) void speak(g, l, afterSpeaking);
-    }, 1800);
-    return () => window.clearTimeout(timer);
+    let cancelled = false;
+    let timer = 0;
+    void whenBellDone().then(() => {
+      if (cancelled) return;
+      timer = window.setTimeout(() => {
+        if (cancelled) return;
+        clearBell();
+        const { greetingText: g, locale: l } = latest.current;
+        if (g) void speak(g, l, afterSpeaking);
+      }, 400);
+    });
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   function afterSpeaking() {
