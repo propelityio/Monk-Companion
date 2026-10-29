@@ -25,6 +25,7 @@ import {
   type ReplyMode,
 } from "@/lib/use-prefs";
 import { CrisisNote } from "./crisis-note";
+import { PoweredBy } from "./powered-by";
 import { RevealText } from "./reveal-text";
 
 type SpeechRec = {
@@ -711,9 +712,12 @@ export function MonkChat() {
             {t.send}
           </button>
         </div>
-        <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-          <CrisisNote locale={locale} />
-        </p>
+        <div className="mt-2 flex flex-col gap-1 text-xs leading-5 text-[var(--muted)] sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+          <p>
+            <CrisisNote locale={locale} />
+          </p>
+          <PoweredBy />
+        </div>
       </form>
     </div>
   );

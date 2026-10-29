@@ -1,6 +1,7 @@
 import { CrisisNote } from "@/components/crisis-note";
 import { LotusMark } from "@/components/lotus-mark";
 import { OpenChatLink } from "@/components/open-chat-link";
+import { PoweredBy } from "@/components/powered-by";
 import { SiteHeader } from "@/components/site-header";
 
 export default function Home() {
@@ -60,8 +61,11 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <footer className="border-t border-[var(--line)] px-6 py-6 text-sm text-[var(--muted)]">
-        <CrisisNote />
+      <footer className="flex flex-col gap-3 border-t border-[var(--line)] px-6 py-6 text-sm text-[var(--muted)] sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+        <p>
+          <CrisisNote />
+        </p>
+        <PoweredBy />
       </footer>
     </div>
   );
