@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { playBell } from "@/lib/bell";
+import { markArrival, playBell } from "@/lib/bell";
 import { getReplyMode } from "@/lib/use-prefs";
 
 /**
@@ -25,6 +25,7 @@ export function OpenChatLink({
       lang={lang}
       className={className}
       onClick={() => {
+        markArrival();
         if (getReplyMode() !== "text") playBell();
       }}
     >

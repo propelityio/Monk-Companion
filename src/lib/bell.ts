@@ -139,3 +139,17 @@ export function clearBell(): void {
 export function runningAudioContext(): AudioContext | null {
   return ctx && ctx.state === "running" ? ctx : null;
 }
+
+// ---------- arriving at the chat by a click (with or without the bell) ----------
+
+let arrivedAt = 0;
+
+/** Note that the visitor is on their way into the chat by clicking a link. */
+export function markArrival(): void {
+  arrivedAt = Date.now();
+}
+
+/** Did the visitor just click their way into the chat? */
+export function arrivedRecently(withinMs = 4000): boolean {
+  return arrivedAt > 0 && Date.now() - arrivedAt < withinMs;
+}

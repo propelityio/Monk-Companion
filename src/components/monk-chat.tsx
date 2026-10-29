@@ -4,7 +4,14 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import type { ChatCitation, ChatMessage } from "@/lib/chat";
 import { LOCALE_NAMES, LOCALES, SPEECH_LANG, UI, toLocale, type Locale } from "@/lib/i18n";
 import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib/profile";
-import { clearBell, justRangBell, runningAudioContext, unlockAudio, whenBellDone } from "@/lib/bell";
+import {
+  arrivedRecently,
+  clearBell,
+  justRangBell,
+  runningAudioContext,
+  unlockAudio,
+  whenBellDone,
+} from "@/lib/bell";
 import {
   detectRegion,
   getReplyMode,
@@ -50,12 +57,13 @@ export function MonkChat() {
   const mode = useReplyMode();
   const handsFree = useHandsFree();
   const [shownText, setShownText] = useState<Set<number>>(() => new Set());
-  // Arriving by the bell in a voice mode, the greeting stays hidden until the
-  // Monk starts saying it. (Arriving directly, there's no bell and no wait.)
+  // Arriving by a click, the greeting waits to appear: spoken word by word in
+  // the voice modes, or faded in word by word in Text mode. (Opening the page
+  // directly, it simply shows.)
   const [greetingPending, setGreetingPending] = useState(
-    () => typeof window !== "undefined" && justRangBell() && getReplyMode() !== "text",
+    () => typeof window !== "undefined" && arrivedRecently(),
   );
-  const showGreeting = !greetingPending || mode === "text";
+  const showGreeting = !greetingPending;
   // Which text is being spoken right now, and how many characters have been said.
   const [reveal, setReveal] = useState<{ key: string; chars: number } | null>(null);
   const [paused, setPaused] = useState(false);
@@ -85,6 +93,42 @@ export function MonkChat() {
       },
     };
   }
+  // Text mode: the same word-by-word fade-in, at a comfortable reading pace.
+  const silentTimer = useRef(0);
+  const silentPaused = useRef(false);
+  function stopSilentReveal() {
+    window.clearTimeout(silentTimer.current);
+    silentTimer.current = 0;
+    silentPaused.current = false;
+  }
+  function revealSilently(key: string, text: string) {
+    stopSilentReveal();
+    const ends: number[] = [];
+    const re = /\S+/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text))) ends.push(m.index + m[0].length);
+    let i = 0;
+    setPaused(false);
+    setReveal({ key, chars: 0 });
+    const step = () => {
+      if (silentPaused.current) {
+        silentTimer.current = window.setTimeout(step, 150);
+        return;
+      }
+      if (i >= ends.length) {
+        silentTimer.current = 0;
+        setReveal((r) => (r?.key === key ? null : r));
+        return;
+      }
+      const end = ends[i++];
+      setReveal((r) => (r?.key === key ? { key, chars: end } : r));
+      const last = text[end - 1] ?? "";
+      // About 230 words a minute, resting a little after sentences and commas.
+      const rest = /[.!?。！？]/.test(last) ? 320 : /[,;:、，]/.test(last) ? 140 : 0;
+      silentTimer.current = window.setTimeout(step, 260 + rest);
+    };
+    silentTimer.current = window.setTimeout(step, 120);
+  }
   const [profile, setProfile] = useState<GuestProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState<GuestProfile>({ name: "", email: "", intention: "" });
@@ -103,6 +147,7 @@ export function MonkChat() {
     greetingText,
     locale,
     revealKey: null as string | null,
+    revealSilently: (key: string, text: string): unknown => [key, text],
   });
   useEffect(() => {
     latest.current = {
@@ -113,13 +158,23 @@ export function MonkChat() {
       greetingText,
       locale,
       revealKey: reveal?.key ?? null,
+      revealSilently,
     };
   });
 
   // Arriving by the bell: wait until it has finished ringing, then the Monk
   // greets aloud after a short pause.
   useEffect(() => {
-    if (!justRangBell() || getReplyMode() === "text") return;
+    if (!justRangBell() || getReplyMode() === "text") {
+      if (!arrivedRecently()) return;
+      // Text mode (no bell): fade the greeting in, word by word.
+      const timer = window.setTimeout(() => {
+        setGreetingPending(false);
+        const g = latest.current.greetingText;
+        if (g) latest.current.revealSilently("greeting", g);
+      }, 300);
+      return () => window.clearTimeout(timer);
+    }
     let cancelled = false;
     let timer = 0;
     let safety = 0;
@@ -174,6 +229,7 @@ export function MonkChat() {
   useEffect(
     () => () => {
       stopSpeaking();
+      window.clearTimeout(silentTimer.current);
       recRef.current?.stop();
       recRef.current = null;
     },
@@ -181,6 +237,11 @@ export function MonkChat() {
   );
 
   function togglePause() {
+    if (silentTimer.current) {
+      silentPaused.current = !paused;
+      setPaused(!paused);
+      return;
+    }
     if (paused) {
       resumeSpeaking();
       setPaused(false);
@@ -218,6 +279,7 @@ export function MonkChat() {
     unlockAudio(); // lets the softened voice play later in this exchange
 
     const nextMessages: DisplayMessage[] = [...latest.current.messages, { role: "user", content }];
+    stopSilentReveal();
     setReveal(null);
     setPaused(false);
     setMessages(nextMessages);
@@ -260,6 +322,7 @@ export function MonkChat() {
       const replyMode = getReplyMode();
       if (replyMode === "both") setReveal({ key, chars: 0 }); // words wait for the voice
       setMessages([...nextMessages, reply]);
+      if (replyMode === "text") revealSilently(key, reply.content);
       if (replyMode !== "text") {
         void speak(reply.content, locale, revealing(key, afterSpeaking));
       }
@@ -288,6 +351,7 @@ export function MonkChat() {
     }
     if (recRef.current) return;
     stopSpeaking();
+    stopSilentReveal();
     setReveal(null);
     setPaused(false);
     try {
@@ -321,6 +385,8 @@ export function MonkChat() {
 
   function chooseMode(next: ReplyMode) {
     if (next === "text") stopSpeaking();
+    stopSilentReveal();
+    setGreetingPending(false);
     setReveal(null);
     setPaused(false);
     setReplyMode(next);
@@ -540,7 +606,7 @@ export function MonkChat() {
               <p className="whitespace-pre-wrap leading-7">
                 <RevealText
                   text={message.content}
-                  spoken={message.role === "assistant" && mode === "both" ? spokenFor(`m${i}`) : undefined}
+                  spoken={message.role === "assistant" && mode !== "voice" ? spokenFor(`m${i}`) : undefined}
                 />
               </p>
             )}
