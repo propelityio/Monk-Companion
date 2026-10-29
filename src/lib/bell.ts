@@ -1,5 +1,7 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+
 // A singing-bowl style bell, synthesised in the browser (no audio file).
 // Partials at inharmonic ratios, each paired with a slightly detuned twin so
 // the tone shimmers as it fades, like a struck Tibetan bowl.
@@ -143,10 +145,41 @@ export function runningAudioContext(): AudioContext | null {
 // ---------- arriving at the chat by a click (with or without the bell) ----------
 
 let arrivedAt = 0;
+// True from the tap until the greeting starts to appear (spoken or faded in).
+// A shared signal, not component state, because the chat page may be reused
+// from the background rather than created fresh.
+let arrivalPending = false;
+let arrivalSafety = 0;
+const arrivalListeners = new Set<() => void>();
+const notifyArrival = () => arrivalListeners.forEach((fn) => fn());
 
 /** Note that the visitor is on their way into the chat by clicking a link. */
 export function markArrival(): void {
   arrivedAt = Date.now();
+  arrivalPending = true;
+  notifyArrival();
+  // Never leave the greeting hidden if something goes wrong. (Restarted on
+  // each arrival, so an earlier visit's timer can't reveal this one early.)
+  window.clearTimeout(arrivalSafety);
+  arrivalSafety = window.setTimeout(settleArrival, 20000);
+}
+
+/** The greeting has started to appear (or won't be shown with a delay). */
+export function settleArrival(): void {
+  if (!arrivalPending) return;
+  arrivalPending = false;
+  notifyArrival();
+}
+
+export function useArrivalPending(): boolean {
+  return useSyncExternalStore(
+    (fn) => {
+      arrivalListeners.add(fn);
+      return () => arrivalListeners.delete(fn);
+    },
+    () => arrivalPending,
+    () => false,
+  );
 }
 
 /** Did the visitor just click their way into the chat? */

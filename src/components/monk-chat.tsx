@@ -7,6 +7,8 @@ import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib
 import {
   arrivedRecently,
   clearBell,
+  settleArrival,
+  useArrivalPending,
   isTouchDevice,
   primeVoice,
   voicePlayer,
@@ -63,9 +65,8 @@ export function MonkChat() {
   // Arriving by a click, the greeting waits to appear: spoken word by word in
   // the voice modes, or faded in word by word in Text mode. (Opening the page
   // directly, it simply shows.)
-  const [greetingPending, setGreetingPending] = useState(
-    () => typeof window !== "undefined" && arrivedRecently(),
-  );
+  const arrivalPending = useArrivalPending();
+  const greetingPending = arrivalPending && messages.length === 0;
   const showGreeting = !greetingPending;
   // Which text is being spoken right now, and how many characters have been said.
   const [reveal, setReveal] = useState<{ key: string; chars: number } | null>(null);
@@ -173,11 +174,16 @@ export function MonkChat() {
   // Arriving by the bell: wait until it has finished ringing, then the Monk
   // greets aloud after a short pause.
   useEffect(() => {
+    // Coming back to a conversation already under way: no new greeting.
+    if (latest.current.messages.length > 0) {
+      settleArrival();
+      return;
+    }
     if (!justRangBell() || getReplyMode() === "text") {
       if (!arrivedRecently()) return;
       // Text mode (no bell): fade the greeting in, word by word.
       const timer = window.setTimeout(() => {
-        setGreetingPending(false);
+        settleArrival();
         const g = latest.current.greetingText;
         if (g) latest.current.revealSilently("greeting", g);
       }, 300);
@@ -193,18 +199,18 @@ export function MonkChat() {
         clearBell();
         const { greetingText: g, locale: l } = latest.current;
         // If the voice can't start for any reason, show the words anyway.
-        safety = window.setTimeout(() => setGreetingPending(false), 4000);
+        safety = window.setTimeout(() => settleArrival(), 4000);
         if (g) {
           const hooks = revealing("greeting", afterSpeaking);
           void speak(g, l, {
             ...hooks,
             onStart: () => {
-              setGreetingPending(false);
+              settleArrival();
               hooks.onStart();
             },
           });
         }
-        else setGreetingPending(false);
+        else settleArrival();
       }, 400);
     });
     return () => {
@@ -400,7 +406,7 @@ export function MonkChat() {
   function chooseMode(next: ReplyMode) {
     if (next === "text") stopSpeaking();
     stopSilentReveal();
-    setGreetingPending(false);
+    settleArrival();
     setReveal(null);
     setPaused(false);
     setReplyMode(next);
