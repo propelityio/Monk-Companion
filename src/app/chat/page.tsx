@@ -13,7 +13,7 @@ export default function ChatPage() {
     <div className="flex h-dvh flex-col">
       <SiteHeader />
       <ChatHost />
-      <SiteFooter compact followLanguage />
+      <SiteFooter compact showCrisisNote={false} />
     </div>
   );
 }

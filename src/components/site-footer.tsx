@@ -18,9 +18,12 @@ const LINKS = [
 export function SiteFooter({
   compact = false,
   followLanguage = false,
+  showCrisisNote = true,
 }: {
   compact?: boolean;
   followLanguage?: boolean;
+  /** The chat page shows the crisis note beside the message box instead. */
+  showCrisisNote?: boolean;
 }) {
   return (
     <footer
@@ -28,10 +31,12 @@ export function SiteFooter({
         compact ? "px-5 py-3 text-xs leading-5" : "px-6 py-6 text-sm"
       }`}
     >
-      <p>{followLanguage ? <LocalizedCrisisNote /> : <CrisisNote />}</p>
-      <nav
-        aria-label="Site"
-        className={`flex flex-wrap justify-center gap-x-6 gap-y-1 ${compact ? "mt-2" : "mt-4"}`}
+      {showCrisisNote ? (
+        <p className={compact ? "mb-2" : "mb-4"}>
+          {followLanguage ? <LocalizedCrisisNote /> : <CrisisNote />}
+        </p>
+      ) : null}
+      <nav aria-label="Site" className="flex flex-wrap justify-center gap-x-6 gap-y-1"
       >
         {LINKS.map((l) => (
           <Link

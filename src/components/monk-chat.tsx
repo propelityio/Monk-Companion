@@ -26,6 +26,7 @@ import {
   useReplyMode,
   type ReplyMode,
 } from "@/lib/use-prefs";
+import { CrisisNote } from "./crisis-note";
 import { RevealText } from "./reveal-text";
 
 type SpeechRec = {
@@ -677,7 +678,7 @@ export function MonkChat() {
         ) : null}
       </div>
 
-      <form onSubmit={onSubmit} className="px-5 pb-4 pt-2">
+      <form onSubmit={onSubmit} className="border-t border-[var(--line)] px-5 pb-3 pt-4">
         {blockedVoice ? (
           <div className="mb-3 flex justify-center">
             <button
@@ -745,6 +746,9 @@ export function MonkChat() {
             {t.send}
           </button>
         </div>
+        <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
+          <CrisisNote locale={locale} />
+        </p>
       </form>
     </div>
   );
