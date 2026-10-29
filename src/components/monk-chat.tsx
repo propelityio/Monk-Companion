@@ -649,7 +649,11 @@ export function MonkChat() {
             message.citations.length > 0 &&
             spokenFor(`m${i}`) === undefined &&
             !(message.role === "assistant" && mode === "voice" && !shownText.has(i)) ? (
-              <ul className="mt-2 flex flex-wrap gap-2">
+              <>
+              {message.citations.some((c) => c.sourceType === "transcript") ? (
+                <p className="mt-3 text-xs text-[var(--muted)]">{t.goDeeper}</p>
+              ) : null}
+              <ul className="mt-1 flex flex-wrap gap-2">
                 {message.citations.map((c) => {
                   const label = c.title;
                   return (
@@ -673,6 +677,7 @@ export function MonkChat() {
                   );
                 })}
               </ul>
+              </>
             ) : null}
           </article>
         ))}

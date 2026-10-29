@@ -62,6 +62,7 @@ type UiText = {
   pause: string;
   resume: string;
   tapToHear: string;
+  goDeeper: string;
   tapToSpeak: string;
   aiVoiceNote: string;
   notAdvice: string;
@@ -111,6 +112,7 @@ export const UI: Record<Locale, UiText> = {
     pause: "Pause",
     resume: "Resume",
     tapToHear: "Tap to hear the Monk",
+    goDeeper: "Go deeper",
     tapToSpeak: "Tap Speak to answer",
     notAdvice: "Not therapy or medical advice.",
     crisisIn: (c, l, t) => `If you are in crisis in ${c}, ${t ? "call or text" : "call"} ${l}, or contact your local emergency number.`,
@@ -203,6 +205,7 @@ export const UI: Record<Locale, UiText> = {
     pause: "Pausar",
     resume: "Continuar",
     tapToHear: "Toca para escuchar al monje",
+    goDeeper: "Profundiza",
     tapToSpeak: "Toca Hablar para responder",
     notAdvice: "No es terapia ni consejo médico.",
     crisisIn: (c, l, t) => `Si estás en crisis en ${c}, ${t ? "llama o envía un mensaje al" : "llama al"} ${l}, o contacta con el número de emergencias local.`,
@@ -295,6 +298,7 @@ export const UI: Record<Locale, UiText> = {
     pause: "Pausar",
     resume: "Continuar",
     tapToHear: "Toque para ouvir o monge",
+    goDeeper: "Aprofunde",
     tapToSpeak: "Toque em Falar para responder",
     notAdvice: "Não é terapia nem aconselhamento médico.",
     crisisIn: (c, l, t) => `Se você estiver em crise (${c}), ${t ? "ligue ou envie mensagem para o" : "ligue para o"} ${l}, ou contate o número de emergência local.`,
@@ -387,6 +391,7 @@ export const UI: Record<Locale, UiText> = {
     pause: "Pause",
     resume: "Reprendre",
     tapToHear: "Touchez pour écouter le moine",
+    goDeeper: "Pour aller plus loin",
     tapToSpeak: "Touchez Parler pour répondre",
     notAdvice: "Ceci n’est ni une thérapie ni un avis médical.",
     crisisIn: (c, l, t) => `Si vous êtes en crise (${c}), ${t ? "appelez ou écrivez au" : "appelez le"} ${l}, ou contactez le numéro d’urgence local.`,
@@ -479,6 +484,7 @@ export const UI: Record<Locale, UiText> = {
     pause: "Pause",
     resume: "Fortsetzen",
     tapToHear: "Tippen, um den Mönch zu hören",
+    goDeeper: "Vertiefen",
     tapToSpeak: "Tippen Sie auf Sprechen, um zu antworten",
     notAdvice: "Keine Therapie oder medizinische Beratung.",
     crisisIn: (c, l, t) => `Wenn Sie in einer Krise sind (${c}), rufen Sie die ${l} an${t ? " oder schreiben Sie eine SMS" : ""} oder wählen Sie den örtlichen Notruf.`,
@@ -571,6 +577,7 @@ export const UI: Record<Locale, UiText> = {
     pause: "Pausa",
     resume: "Riprendi",
     tapToHear: "Tocca per ascoltare il monaco",
+    goDeeper: "Approfondisci",
     tapToSpeak: "Tocca Parla per rispondere",
     notAdvice: "Non è terapia né consulenza medica.",
     crisisIn: (c, l, t) => `Se sei in crisi (${c}), ${t ? "chiama o scrivi al" : "chiama il"} ${l}, oppure contatta il numero di emergenza locale.`,
@@ -663,6 +670,7 @@ export const UI: Record<Locale, UiText> = {
     pause: "暂停",
     resume: "继续",
     tapToHear: "点按以收听僧人",
+    goDeeper: "深入学习",
     tapToSpeak: "点按“说话”来回答",
     notAdvice: "这不是心理治疗或医疗建议。",
     crisisIn: (c, l, t) => `如果你在${c}正处于危机中，请拨打${t ? "或发短信至" : ""} ${l}，或联系当地紧急电话。`,
@@ -726,6 +734,7 @@ export const UI: Record<Locale, UiText> = {
     pause: "一時停止",
     resume: "再開",
     tapToHear: "タップして僧侶の声を聞く",
+    goDeeper: "さらに深める",
     tapToSpeak: "「話す」をタップして答える",
     notAdvice: "これはセラピーや医療上の助言ではありません。",
     crisisIn: (c, l, t) => `${c}で危機的な状況にある場合は、${l} に${t ? "電話またはメッセージ" : "電話"}するか、地域の緊急番号に連絡してください。`,
