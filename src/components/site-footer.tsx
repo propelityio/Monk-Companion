@@ -25,30 +25,37 @@ export function SiteFooter({
   /** The chat page shows the crisis note beside the message box instead. */
   showCrisisNote?: boolean;
 }) {
+  const pad = compact ? "px-5" : "px-6";
   return (
     <footer
       className={`border-t border-[var(--line)] text-[var(--muted)] ${
-        compact ? "px-5 py-3 text-xs leading-5" : "px-6 py-6 text-sm"
+        compact ? "text-xs leading-5" : "text-sm"
       }`}
     >
       {showCrisisNote ? (
-        <p className={compact ? "mb-2" : "mb-4"}>
+        // Like the chat page: the crisis note, then a dividing line, then the links.
+        <p className={`${pad} ${compact ? "py-3" : "py-5"}`}>
           {followLanguage ? <LocalizedCrisisNote /> : <CrisisNote />}
         </p>
       ) : null}
-      <nav aria-label="Site" className="flex flex-wrap justify-center gap-x-6 gap-y-1"
+      <div
+        className={`${pad} ${compact ? "py-3" : "py-5"} ${
+          showCrisisNote ? "border-t border-[var(--line)]" : ""
+        }`}
       >
-        {LINKS.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className="text-[var(--maroon)] underline-offset-2 hover:underline"
-          >
-            {l.label}
-          </Link>
-        ))}
-      </nav>
-      <PoweredBy className={`text-center ${compact ? "mt-1" : "mt-3"}`} />
+        <nav aria-label="Site" className="flex flex-wrap justify-center gap-x-6 gap-y-1">
+          {LINKS.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="text-[var(--maroon)] underline-offset-2 hover:underline"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+        <PoweredBy className={`text-center ${compact ? "mt-1" : "mt-3"}`} />
+      </div>
     </footer>
   );
 }
