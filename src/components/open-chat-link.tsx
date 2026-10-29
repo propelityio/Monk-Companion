@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { markArrival, playBell } from "@/lib/bell";
+import { markArrival, playBell, primeVoice } from "@/lib/bell";
 import { getReplyMode } from "@/lib/use-prefs";
 
 /**
@@ -26,7 +26,10 @@ export function OpenChatLink({
       className={className}
       onClick={() => {
         markArrival();
-        if (getReplyMode() !== "text") playBell();
+        if (getReplyMode() !== "text") {
+          playBell();
+          primeVoice(); // so the phone lets the Monk speak after the bell
+        }
       }}
     >
       {children}

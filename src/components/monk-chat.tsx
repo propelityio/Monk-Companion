@@ -7,9 +7,11 @@ import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib
 import {
   arrivedRecently,
   clearBell,
+  isTouchDevice,
+  primeVoice,
+  voicePlayer,
   justRangBell,
   runningAudioContext,
-  unlockAudio,
   whenBellDone,
 } from "@/lib/bell";
 import {
@@ -34,6 +36,7 @@ type SpeechRec = {
   interimResults: boolean;
   onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
   onend: (() => void) | null;
+  onerror?: ((event: { error: string }) => void) | null;
   start: () => void;
   stop: () => void;
 };
@@ -68,6 +71,10 @@ export function MonkChat() {
   // Which text is being spoken right now, and how many characters have been said.
   const [reveal, setReveal] = useState<{ key: string; chars: number } | null>(null);
   const [paused, setPaused] = useState(false);
+  // The phone blocked the voice: one tap lets it carry on.
+  const [blockedVoice, setBlockedVoice] = useState<(() => void) | null>(null);
+  // The phone won't reopen the microphone by itself: invite a tap on Speak.
+  const [micNeedsTap, setMicNeedsTap] = useState(false);
   const speaking = reveal !== null && !greetingPending;
   const spokenFor = (key: string) => (reveal && reveal.key === key ? reveal.chars : undefined);
   /** Speech hooks that reveal `key`'s text as it is spoken. */
@@ -86,6 +93,7 @@ export function MonkChat() {
       },
       onProgress: (chars: number) =>
         setReveal((r) => (r?.key === key ? { key, chars } : r)),
+      onBlocked: (resume: () => void) => setBlockedVoice(() => resume),
       onEnd: () => {
         window.clearTimeout(safety);
         setPaused(false);
@@ -238,6 +246,7 @@ export function MonkChat() {
   );
 
   function togglePause() {
+    primeVoice();
     if (silentTimer.current) {
       silentPaused.current = !paused;
       setPaused(!paused);
@@ -277,7 +286,8 @@ export function MonkChat() {
     // A ref, not state: two quick clicks happen before state updates.
     if (!content || sendingRef.current) return;
     sendingRef.current = true;
-    unlockAudio(); // lets the softened voice play later in this exchange
+    primeVoice(); // lets the voice play later in this exchange, phones included
+    setMicNeedsTap(false);
 
     const nextMessages: DisplayMessage[] = [...latest.current.messages, { role: "user", content }];
     stopSilentReveal();
@@ -344,7 +354,7 @@ export function MonkChat() {
   }
 
   function startListening() {
-    unlockAudio();
+    primeVoice();
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Ctor) {
       setInput((prev) => prev || t.voiceUnavailable);
@@ -368,13 +378,17 @@ export function MonkChat() {
         recRef.current = null;
         setListening(false);
       };
+      rec.onerror = (e) => {
+        if (e.error === "not-allowed" || e.error === "service-not-allowed") setMicNeedsTap(true);
+      };
       recRef.current = rec;
       rec.start();
       setListening(true);
     } catch {
-      // Some browsers only allow the mic after a tap; the Speak button still works.
+      // Some browsers (phones especially) only allow the mic after a tap.
       recRef.current = null;
       setListening(false);
+      setMicNeedsTap(true);
     }
   }
 
@@ -666,7 +680,24 @@ export function MonkChat() {
       </div>
 
       <form onSubmit={onSubmit} className="border-t border-[var(--line)] px-5 py-4">
-        {speaking ? (
+        {blockedVoice ? (
+          <div className="mb-3 flex justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                primeVoice();
+                blockedVoice();
+                setBlockedVoice(null);
+              }}
+              className="flex items-center gap-2 rounded-full bg-[var(--maroon)] px-5 py-2 text-sm text-[var(--paper)]"
+            >
+              <span aria-hidden="true">🔊</span> {t.tapToHear}
+            </button>
+          </div>
+        ) : micNeedsTap && handsFree && mode !== "text" && !speaking && !listening && !busy ? (
+          <p className="mb-3 text-center text-sm text-[var(--maroon)]">{t.tapToSpeak}</p>
+        ) : null}
+        {speaking && !blockedVoice ? (
           <div className="mb-3 flex justify-center">
             <button
               type="button"
@@ -695,7 +726,11 @@ export function MonkChat() {
           />
           <button
             type="button"
-            onClick={() => (listening ? stopListening() : startListening())}
+            onClick={() => {
+              setMicNeedsTap(false);
+              if (listening) stopListening();
+              else startListening();
+            }}
             className={`h-[52px] rounded-full border px-4 text-sm ${
               listening
                 ? "border-[var(--saffron)] bg-[var(--saffron-soft)] text-[var(--maroon)]"
@@ -744,6 +779,8 @@ type SpeakHooks = {
   onEnd?: () => void;
   /** How many characters of the text have been spoken so far. */
   onProgress?: (chars: number) => void;
+  /** The browser blocked playback until a tap; call `resume` from that tap. */
+  onBlocked?: (resume: () => void) => void;
 };
 
 let premiumVoice: boolean | null = null; // unknown until the first try
@@ -786,10 +823,13 @@ function stopSpeaking() {
  * warmth. Only when the browser's audio engine is already running; otherwise
  * the voice plays as is.
  */
+let voiceWarmed = false;
 function warmVoice(audio: HTMLAudioElement) {
+  if (voiceWarmed || isTouchDevice()) return;
   const ac = runningAudioContext();
   if (!ac) return;
   try {
+    voiceWarmed = true;
     const source = ac.createMediaElementSource(audio);
     const warmth = ac.createBiquadFilter();
     warmth.type = "lowshelf";
@@ -863,7 +903,11 @@ function playPart(
   return new Promise((resolve) => {
     const bytes = Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0));
     const url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
-    const audio = new Audio(url);
+    // One shared player, warmed up during the visitor's taps (see primeVoice).
+    const audio = voicePlayer();
+    audio.onplay = audio.onended = audio.onpause = audio.ontimeupdate = null;
+    audio.muted = false;
+    audio.src = url;
     const starts = data.starts ?? [];
     const scale = starts.length ? part.text.length / starts.length : 1;
     let last = -1;
@@ -911,7 +955,15 @@ function playPart(
     };
     warmVoice(audio);
     currentAudio = audio;
-    audio.play().catch(() => finish(false));
+    audio.play().catch((err: unknown) => {
+      const blocked = err instanceof DOMException && err.name === "NotAllowedError";
+      if (blocked && hooks.onBlocked && run === speechRun) {
+        // Wait for a tap instead of giving up.
+        hooks.onBlocked(() => {
+          audio.play().catch(() => finish(false));
+        });
+      } else finish(false);
+    });
   });
 }
 

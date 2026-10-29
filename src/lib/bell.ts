@@ -153,3 +153,49 @@ export function markArrival(): void {
 export function arrivedRecently(withinMs = 4000): boolean {
   return arrivedAt > 0 && Date.now() - arrivedAt < withinMs;
 }
+
+// ---------- the Monk's voice player ----------
+// Phones only let a page play sound in direct response to a tap. One player is
+// "warmed up" during the visitor's taps (Begin a conversation, Send, Speak),
+// so it is allowed to speak later, e.g. after the bell has finished.
+
+let voiceEl: HTMLAudioElement | null = null;
+let voicePrimed = false;
+const SILENCE = "/sounds/silence.mp3";
+
+export function voicePlayer(): HTMLAudioElement {
+  if (!voiceEl) {
+    voiceEl = new Audio();
+    voiceEl.preload = "auto";
+    voiceEl.setAttribute("playsinline", "");
+  }
+  return voiceEl;
+}
+
+/** Call inside a tap or click handler. */
+export function primeVoice(): void {
+  if (typeof window === "undefined") return;
+  unlockAudio();
+  const el = voicePlayer();
+  if (voicePrimed || !el.paused) return;
+  el.muted = true;
+  el.src = SILENCE;
+  el.play()
+    .then(() => {
+      if (el.src.endsWith(SILENCE)) el.pause();
+      voicePrimed = true;
+    })
+    .catch(() => {})
+    .finally(() => {
+      el.muted = false;
+    });
+}
+
+/** Phones and tablets (touch screens) skip the EQ: it can silence the voice there. */
+export function isTouchDevice(): boolean {
+  try {
+    return window.matchMedia("(pointer: coarse)").matches;
+  } catch {
+    return false;
+  }
+}
