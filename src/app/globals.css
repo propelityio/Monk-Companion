@@ -15,7 +15,6 @@
   --maroon-soft: #f4e9e6;  /* the visitor's own messages */
   --saffron: #c98a1e;      /* accent: lotus mark, focus, breath */
   --saffron-soft: #f6e7c8; /* citation chips */
-  --propelity: #2f6b3f;    /* "Powered by: Propelity" link */
   --background: var(--paper);
   --foreground: var(--ink);
 }

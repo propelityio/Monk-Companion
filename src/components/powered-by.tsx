@@ -7,7 +7,7 @@ export function PoweredBy({ className = "" }: { className?: string }) {
         href="https://propelity.io"
         target="_blank"
         rel="noopener noreferrer"
-        className="text-[var(--propelity)] underline-offset-2 hover:underline"
+        className="font-serif text-[1.05em] text-[var(--maroon)] underline-offset-2 hover:underline"
       >
         Propelity
       </a>
