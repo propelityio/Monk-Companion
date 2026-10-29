@@ -4,7 +4,7 @@ import { LotusMark } from "./lotus-mark";
 
 export function SiteHeader() {
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-[var(--line)] px-5 py-4">
+    <header className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-[var(--line)] bg-[var(--paper)]/90 px-5 py-4 backdrop-blur-sm">
       <HomeLink className="flex items-center gap-3">
         <LotusMark className="h-8 w-8 text-[var(--saffron)]" />
         <span className="flex flex-col leading-tight">
