@@ -618,9 +618,19 @@ export function MonkChat() {
               <button
                 type="button"
                 onClick={() => setShownText((prev) => new Set(prev).add(i))}
-                className="flex items-center gap-2 text-sm text-[var(--muted)] underline-offset-2 hover:underline"
+                className="flex items-center gap-3 text-sm text-[var(--muted)] underline-offset-2 hover:underline"
               >
-                <span aria-hidden="true">🔊</span> {t.spokenReply} · {t.showText}
+                {spokenFor(`m${i}`) !== undefined ? (
+                  // The Monk is speaking: the saffron dot breathes with the voice
+                  // (and holds still while paused).
+                  <span
+                    className={`inline-block h-3 w-3 rounded-full bg-[var(--saffron)] ${paused ? "" : "breath"}`}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <span aria-hidden="true">🔊</span>
+                )}
+                {t.spokenReply} · {t.showText}
               </button>
             ) : (
               <p className="whitespace-pre-wrap leading-7">
