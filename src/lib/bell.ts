@@ -26,7 +26,6 @@ const PARTIALS: { ratio: number; gain: number; decay: number }[] = [
 export const BELLS = [
   "/sounds/bell-tibetan-bell.mp3",
   "/sounds/bell-small-bowl.mp3",
-  "/sounds/bell-silver-bells.mp3",
   "/sounds/bell-singing-bowl.mp3",
 ];
 const NEXT_KEY = "monk-companion-next-bell"; // across visits (localStorage)

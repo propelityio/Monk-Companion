@@ -11,7 +11,6 @@ and loudness-matched (about -20 LUFS) from the originals in
 |---|---|---|
 | bell-tibetan-bell.mp3 | Tibetan - Bell.wav | first strike, 3 s, faded |
 | bell-small-bowl.mp3 | Tibetan - Small Bowl.wav | first strike, 3 s, faded |
-| bell-silver-bells.mp3 | Tibetan Silver Bells.mp3 | first chimes, 3 s, faded |
 | bell-singing-bowl.mp3 | Tibetan - Singing Bowl.flac | rubbed-bowl swell, 3 s, faded in and out |
 
 To add or remove a bell, add the file here and update `BELLS`.
