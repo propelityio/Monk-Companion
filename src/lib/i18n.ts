@@ -64,6 +64,12 @@ type UiText = {
   tapToHear: string;
   goDeeper: string;
   podcast: string;
+  end: string;
+  stillHere: string;
+  silenceGoodbye: string;
+  endedTitle: string;
+  guestEnded: string;
+  newConversation: string;
   tapToSpeak: string;
   aiVoiceNote: string;
   notAdvice: string;
@@ -115,6 +121,12 @@ export const UI: Record<Locale, UiText> = {
     tapToHear: "Tap to hear the Monk",
     goDeeper: "Go deeper",
     podcast: "Podcast",
+    end: "End",
+    stillHere: "I'm still here. Take your time; whenever you're ready, I'm listening.",
+    silenceGoodbye: "It seems the moment has passed, and that's all right. Thank you for sitting with me. I'm here whenever you'd like to come back.",
+    endedTitle: "This conversation has come to a close.",
+    guestEnded: "Guest conversations close after six questions. You're welcome to begin a new one, or set up a personal path.",
+    newConversation: "Begin a new conversation",
     tapToSpeak: "Tap Speak to answer",
     notAdvice: "Not therapy or medical advice.",
     crisisIn: (c, l, t) => `If you are in crisis in ${c}, ${t ? "call or text" : "call"} ${l}, or contact your local emergency number.`,
@@ -209,6 +221,12 @@ export const UI: Record<Locale, UiText> = {
     tapToHear: "Toca para escuchar al monje",
     goDeeper: "Profundiza",
     podcast: "Pódcast",
+    end: "Terminar",
+    stillHere: "Sigo aquí. Tómate tu tiempo; cuando quieras, te escucho.",
+    silenceGoodbye: "Parece que el momento ha pasado, y está bien. Gracias por estar conmigo. Aquí estaré cuando quieras volver.",
+    endedTitle: "Esta conversación ha llegado a su fin.",
+    guestEnded: "Las conversaciones de invitado terminan después de seis preguntas. Puedes empezar una nueva o crear un camino personal.",
+    newConversation: "Empezar una nueva conversación",
     tapToSpeak: "Toca Hablar para responder",
     notAdvice: "No es terapia ni consejo médico.",
     crisisIn: (c, l, t) => `Si estás en crisis en ${c}, ${t ? "llama o envía un mensaje al" : "llama al"} ${l}, o contacta con el número de emergencias local.`,
@@ -303,6 +321,12 @@ export const UI: Record<Locale, UiText> = {
     tapToHear: "Toque para ouvir o monge",
     goDeeper: "Aprofunde",
     podcast: "Podcast",
+    end: "Encerrar",
+    stillHere: "Ainda estou aqui. Leve o seu tempo; quando quiser, estou ouvindo.",
+    silenceGoodbye: "Parece que o momento passou, e está tudo bem. Obrigado por estar comigo. Estarei aqui quando quiser voltar.",
+    endedTitle: "Esta conversa chegou ao fim.",
+    guestEnded: "Conversas de visitante terminam após seis perguntas. Você pode começar uma nova ou criar um caminho pessoal.",
+    newConversation: "Começar uma nova conversa",
     tapToSpeak: "Toque em Falar para responder",
     notAdvice: "Não é terapia nem aconselhamento médico.",
     crisisIn: (c, l, t) => `Se você estiver em crise (${c}), ${t ? "ligue ou envie mensagem para o" : "ligue para o"} ${l}, ou contate o número de emergência local.`,
@@ -397,6 +421,12 @@ export const UI: Record<Locale, UiText> = {
     tapToHear: "Touchez pour écouter le moine",
     goDeeper: "Pour aller plus loin",
     podcast: "Podcast",
+    end: "Terminer",
+    stillHere: "Je suis toujours là. Prenez votre temps ; quand vous voulez, je vous écoute.",
+    silenceGoodbye: "Il semble que le moment soit passé, et c’est très bien ainsi. Merci d’avoir été là. Je suis là quand vous voudrez revenir.",
+    endedTitle: "Cette conversation touche à sa fin.",
+    guestEnded: "Les conversations invitées se terminent après six questions. Vous pouvez en commencer une nouvelle ou créer un chemin personnel.",
+    newConversation: "Commencer une nouvelle conversation",
     tapToSpeak: "Touchez Parler pour répondre",
     notAdvice: "Ceci n’est ni une thérapie ni un avis médical.",
     crisisIn: (c, l, t) => `Si vous êtes en crise (${c}), ${t ? "appelez ou écrivez au" : "appelez le"} ${l}, ou contactez le numéro d’urgence local.`,
@@ -491,6 +521,12 @@ export const UI: Record<Locale, UiText> = {
     tapToHear: "Tippen, um den Mönch zu hören",
     goDeeper: "Vertiefen",
     podcast: "Podcast",
+    end: "Beenden",
+    stillHere: "Ich bin noch da. Lassen Sie sich Zeit; wenn Sie so weit sind, höre ich zu.",
+    silenceGoodbye: "Es scheint, der Moment ist vorbei, und das ist in Ordnung. Danke, dass Sie da waren. Ich bin hier, wann immer Sie zurückkommen möchten.",
+    endedTitle: "Dieses Gespräch ist zu Ende.",
+    guestEnded: "Gastgespräche enden nach sechs Fragen. Sie können ein neues beginnen oder einen persönlichen Weg einrichten.",
+    newConversation: "Neues Gespräch beginnen",
     tapToSpeak: "Tippen Sie auf Sprechen, um zu antworten",
     notAdvice: "Keine Therapie oder medizinische Beratung.",
     crisisIn: (c, l, t) => `Wenn Sie in einer Krise sind (${c}), rufen Sie die ${l} an${t ? " oder schreiben Sie eine SMS" : ""} oder wählen Sie den örtlichen Notruf.`,
@@ -585,6 +621,12 @@ export const UI: Record<Locale, UiText> = {
     tapToHear: "Tocca per ascoltare il monaco",
     goDeeper: "Approfondisci",
     podcast: "Podcast",
+    end: "Termina",
+    stillHere: "Sono ancora qui. Prenditi il tuo tempo; quando vuoi, ti ascolto.",
+    silenceGoodbye: "Sembra che il momento sia passato, e va bene così. Grazie di essere stato con me. Sono qui quando vorrai tornare.",
+    endedTitle: "Questa conversazione si è conclusa.",
+    guestEnded: "Le conversazioni ospite terminano dopo sei domande. Puoi iniziarne una nuova o creare un percorso personale.",
+    newConversation: "Inizia una nuova conversazione",
     tapToSpeak: "Tocca Parla per rispondere",
     notAdvice: "Non è terapia né consulenza medica.",
     crisisIn: (c, l, t) => `Se sei in crisi (${c}), ${t ? "chiama o scrivi al" : "chiama il"} ${l}, oppure contatta il numero di emergenza locale.`,
@@ -679,6 +721,12 @@ export const UI: Record<Locale, UiText> = {
     tapToHear: "点按以收听僧人",
     goDeeper: "深入学习",
     podcast: "播客",
+    end: "结束",
+    stillHere: "我还在这里。慢慢来，准备好时我在听。",
+    silenceGoodbye: "似乎这一刻已经过去了，这也没关系。谢谢你和我在一起。随时欢迎你回来。",
+    endedTitle: "这次对话已经结束。",
+    guestEnded: "访客对话在六个问题后结束。你可以开始新的对话，或设置个人修行之路。",
+    newConversation: "开始新的对话",
     tapToSpeak: "点按“说话”来回答",
     notAdvice: "这不是心理治疗或医疗建议。",
     crisisIn: (c, l, t) => `如果你在${c}正处于危机中，请拨打${t ? "或发短信至" : ""} ${l}，或联系当地紧急电话。`,
@@ -744,6 +792,12 @@ export const UI: Record<Locale, UiText> = {
     tapToHear: "タップして僧侶の声を聞く",
     goDeeper: "さらに深める",
     podcast: "ポッドキャスト",
+    end: "終了",
+    stillHere: "まだここにいます。ゆっくりで大丈夫。準備ができたら聞いています。",
+    silenceGoodbye: "どうやらこの時間は過ぎたようです。それで大丈夫です。一緒にいてくれてありがとう。いつでも戻ってきてください。",
+    endedTitle: "この対話は終わりました。",
+    guestEnded: "ゲストの対話は六つの質問で終わります。新しく始めるか、あなたの道を設定できます。",
+    newConversation: "新しい対話を始める",
     tapToSpeak: "「話す」をタップして答える",
     notAdvice: "これはセラピーや医療上の助言ではありません。",
     crisisIn: (c, l, t) => `${c}で危機的な状況にある場合は、${l} に${t ? "電話またはメッセージ" : "電話"}するか、地域の緊急番号に連絡してください。`,
@@ -792,7 +846,13 @@ export const UI: Record<Locale, UiText> = {
 
 // ---------- fixed server replies ----------
 
-type ServerText = { empty: string; noTeaching: string; error: string };
+type ServerText = {
+  empty: string;
+  noTeaching: string;
+  error: string;
+  howToEnd: string;
+  farewell: string;
+};
 
 export const SERVER_TEXT: Record<Locale, ServerText> = {
   en: {
@@ -800,48 +860,64 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
     noTeaching:
       "I don’t yet have a recorded teaching that speaks to this. As more talks and transcripts are added, I will share them rather than invent an answer.",
     error: "I could not reach the teachings just now. Please try again in a moment.",
+    howToEnd: "Whenever you're ready, you can simply say goodbye, or tap End at the top of the chat. You can also tap the lotus to start fresh.",
+    farewell: "Thank you for sitting with me today. Be gentle with yourself, and come back whenever you like.",
   },
   es: {
     empty: "Siéntate un momento y di lo que está aquí. Puedes escribir o hablar. No necesitas una cuenta.",
     noTeaching:
       "Todavía no tengo una enseñanza grabada que hable de esto. A medida que se añadan más charlas y transcripciones, las compartiré en lugar de inventar una respuesta.",
     error: "No pude acceder a las enseñanzas en este momento. Inténtalo de nuevo en un momento.",
+    howToEnd: "Cuando quieras, puedes simplemente despedirte o tocar Terminar en la parte superior del chat. También puedes tocar el loto para empezar de nuevo.",
+    farewell: "Gracias por compartir este rato conmigo. Sé amable contigo, y vuelve cuando quieras.",
   },
   pt: {
     empty: "Sente-se por um momento e diga o que está aqui. Você pode escrever ou falar. Não é preciso ter conta.",
     noTeaching:
       "Ainda não tenho um ensinamento gravado que fale sobre isso. À medida que mais palestras e transcrições forem adicionadas, vou compartilhá-las em vez de inventar uma resposta.",
     error: "Não consegui acessar os ensinamentos agora. Tente novamente em um momento.",
+    howToEnd: "Quando quiser, você pode simplesmente se despedir ou tocar em Encerrar no topo da conversa. Você também pode tocar no lótus para recomeçar.",
+    farewell: "Obrigado por estar comigo hoje. Seja gentil com você, e volte quando quiser.",
   },
   fr: {
     empty: "Asseyez-vous un instant et dites ce qui est là. Vous pouvez écrire ou parler. Aucun compte n’est nécessaire.",
     noTeaching:
       "Je n’ai pas encore d’enseignement enregistré qui parle de cela. Lorsque d’autres enseignements et transcriptions seront ajoutés, je les partagerai plutôt que d’inventer une réponse.",
     error: "Je n’ai pas pu accéder aux enseignements pour l’instant. Réessayez dans un moment.",
+    howToEnd: "Quand vous le souhaitez, dites simplement au revoir, ou touchez Terminer en haut de la conversation. Vous pouvez aussi toucher le lotus pour recommencer.",
+    farewell: "Merci d’avoir pris ce moment avec moi. Soyez doux avec vous-même, et revenez quand vous voulez.",
   },
   de: {
     empty: "Halten Sie einen Moment inne und sagen Sie, was gerade da ist. Sie können schreiben oder sprechen. Ein Konto ist nicht nötig.",
     noTeaching:
       "Ich habe noch keine aufgezeichnete Unterweisung, die darauf eingeht. Sobald weitere Vorträge und Abschriften hinzukommen, teile ich sie, statt eine Antwort zu erfinden.",
     error: "Ich konnte die Unterweisungen gerade nicht erreichen. Bitte versuchen Sie es gleich noch einmal.",
+    howToEnd: "Wann immer Sie möchten, verabschieden Sie sich einfach oder tippen Sie oben im Gespräch auf Beenden. Mit dem Lotus beginnen Sie neu.",
+    farewell: "Danke, dass Sie sich heute Zeit genommen haben. Seien Sie gut zu sich, und kommen Sie gern wieder.",
   },
   it: {
     empty: "Siediti un momento e di’ ciò che è qui. Puoi scrivere o parlare. Non serve un account.",
     noTeaching:
       "Non ho ancora un insegnamento registrato che parli di questo. Man mano che verranno aggiunti altri discorsi e trascrizioni, li condividerò invece di inventare una risposta.",
     error: "Non sono riuscito a raggiungere gli insegnamenti in questo momento. Riprova tra poco.",
+    howToEnd: "Quando vuoi, puoi semplicemente salutare o toccare Termina in alto nella conversazione. Puoi anche toccare il loto per ricominciare.",
+    farewell: "Grazie per essere stato qui con me oggi. Sii gentile con te stesso, e torna quando vuoi.",
   },
   zh: {
     empty: "静坐片刻，说出此刻心中所有。你可以打字或说话，无需账户。",
     noTeaching:
       "目前还没有录制的教法谈到这个问题。随着更多开示和文字稿加入，我会与你分享，而不会编造回答。",
     error: "刚才无法读取教法，请稍后再试。",
+    howToEnd: "准备好时，你可以直接道别，或点按对话顶部的“结束”。也可以点按莲花重新开始。",
+    farewell: "谢谢你今天和我在一起。善待自己，随时欢迎回来。",
   },
   ja: {
     empty: "少しのあいだ座って、今ここにあることを言葉にしてみてください。文字でも声でも構いません。アカウントは不要です。",
     noTeaching:
       "これについて語る録音された教えは、まだありません。法話や書き起こしが増えれば、答えを作り出すのではなく、それをお伝えします。",
     error: "今は教えにアクセスできませんでした。少ししてからもう一度お試しください。",
+    howToEnd: "いつでも、さよならと言うか、上の「終了」をタップしてください。蓮をタップすると最初からやり直せます。",
+    farewell: "今日は一緒に過ごしてくれてありがとう。自分にやさしく。いつでもまた来てください。",
   },
 };
 

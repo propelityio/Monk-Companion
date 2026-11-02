@@ -13,11 +13,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { messages, locale, region, profile } = (body ?? {}) as {
+  const { messages, locale, region, profile, closing } = (body ?? {}) as {
     messages?: ChatMessage[];
     locale?: string;
     region?: string;
     profile?: { name?: unknown; intention?: unknown } | null;
+    closing?: unknown;
   };
   // Only the name and intention are used; the email stays in the browser.
   const short = (v: unknown, max: number) =>
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
       locale: toLocale(locale),
       region: typeof region === "string" && /^[A-Za-z]{2}$/.test(region) ? region.toUpperCase() : null,
       person,
+      closing: closing === true,
     }),
   );
 }

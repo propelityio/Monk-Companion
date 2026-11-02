@@ -2,11 +2,13 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { ChatCitation, ChatMessage } from "@/lib/chat";
-import { LOCALE_NAMES, LOCALES, SPEECH_LANG, UI, toLocale, type Locale } from "@/lib/i18n";
+import { LOCALE_NAMES, LOCALES, SERVER_TEXT, SPEECH_LANG, UI, toLocale, type Locale } from "@/lib/i18n";
 import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib/profile";
 import {
   arrivedRecently,
   clearBell,
+  markArrival,
+  playBell,
   settleArrival,
   useArrivalPending,
   isTouchDevice,
@@ -16,6 +18,7 @@ import {
   runningAudioContext,
   whenBellDone,
 } from "@/lib/bell";
+import { startFreshConversation } from "@/lib/chat-session";
 import {
   detectRegion,
   getReplyMode,
@@ -76,6 +79,12 @@ export function MonkChat() {
   // Which text is being spoken right now, and how many characters have been said.
   const [reveal, setReveal] = useState<{ key: string; chars: number } | null>(null);
   const [paused, setPaused] = useState(false);
+  // The conversation has closed: why ("goodbye", "guest limit", "silence").
+  const [ended, setEnded] = useState<null | "goodbye" | "limit" | "silence">(null);
+  const endedRef = useRef<typeof ended>(null);
+  const silentTurns = useRef(0);
+  /** Guests close after this many questions. */
+  const GUEST_LIMIT = 6;
   // The phone blocked the voice: one tap lets it carry on.
   const [blockedVoice, setBlockedVoice] = useState<(() => void) | null>(null);
   // The phone won't reopen the microphone by itself: invite a tap on Speak.
@@ -236,7 +245,37 @@ export function MonkChat() {
   }, []);
 
   function afterSpeaking() {
+    if (endedRef.current) return;
     if (latest.current.handsFree && getReplyMode() !== "text") latest.current.startListening();
+  }
+
+  /** The Monk says a closing line (spoken in voice modes) and the chat closes. */
+  function closeWith(text: string, why: "goodbye" | "limit" | "silence") {
+    endedRef.current = why;
+    endTurn(false);
+    stopSilentReveal();
+    const key = `m${latest.current.messages.length}`;
+    setMessages((prev) => [...prev, { role: "assistant", content: text }]);
+    setEnded(why);
+    const replyMode = getReplyMode();
+    if (replyMode === "text") revealSilently(key, text);
+    else void speak(text, locale, revealing(key));
+  }
+
+  /** The End button. */
+  function endConversation() {
+    stopSpeaking();
+    closeWith(SERVER_TEXT[locale].farewell, "goodbye");
+  }
+
+  /** "Begin a new conversation": a fresh start with the bell, like the home page. */
+  function beginAgain() {
+    markArrival();
+    if (getReplyMode() !== "text") {
+      playBell();
+      primeVoice();
+    }
+    startFreshConversation();
   }
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -315,7 +354,11 @@ export function MonkChat() {
     primeVoice(); // lets the voice play later in this exchange, phones included
     setMicNeedsTap(false);
 
+    if (endedRef.current) return;
+    silentTurns.current = 0;
     const nextMessages: DisplayMessage[] = [...latest.current.messages, { role: "user", content }];
+    const questionsSoFar = nextMessages.filter((m) => m.role === "user").length;
+    const lastGuestQuestion = !profile && questionsSoFar >= GUEST_LIMIT;
     stopSilentReveal();
     setReveal(null);
     setPaused(false);
@@ -344,12 +387,22 @@ export function MonkChat() {
           profile,
           locale,
           region: detectRegion(),
+          closing: lastGuestQuestion,
         }),
       });
       const data = (await res.json()) as {
         content?: string;
         citations?: ChatCitation[];
+        ended?: boolean;
       };
+      // The visitor ended the conversation while this reply was on its way.
+      if (endedRef.current) return;
+      // A goodbye, or the guest's last question: the conversation closes after this reply.
+      const closes = Boolean(data.ended) || lastGuestQuestion;
+      if (closes) {
+        endedRef.current = lastGuestQuestion ? "limit" : "goodbye";
+        endTurn(false);
+      }
       const reply: DisplayMessage = {
         role: "assistant",
         content: data.content ?? t.replyFailed,
@@ -359,6 +412,7 @@ export function MonkChat() {
       const replyMode = getReplyMode();
       if (replyMode === "both") setReveal({ key, chars: 0 }); // words wait for the voice
       setMessages([...nextMessages, reply]);
+      if (closes) setEnded(endedRef.current);
       if (replyMode === "text") revealSilently(key, reply.content);
       if (replyMode !== "text") {
         void speak(reply.content, locale, revealing(key, afterSpeaking));
@@ -463,11 +517,11 @@ export function MonkChat() {
     const turn = listenRef.current;
     if (!turn) return;
     window.clearTimeout(turn.silence);
-    turn.silence = window.setTimeout(() => endTurn(true), ms);
+    turn.silence = window.setTimeout(() => endTurn(true, true), ms);
   }
 
   /** Finish listening; send what was said unless `send` is false. */
-  function endTurn(send: boolean) {
+  function endTurn(send: boolean, bySilence = false) {
     const turn = listenRef.current;
     if (!turn || turn.done) return;
     turn.done = true;
@@ -482,6 +536,17 @@ export function MonkChat() {
     setListening(false);
     const said = `${turn.text} ${turn.interim}`.replace(/\s+/g, " ").trim();
     if (send && said) latest.current.send(said);
+    else if (bySilence && !said && !endedRef.current && getReplyMode() !== "text") {
+      // Nothing heard: check in once, then close gently.
+      silentTurns.current += 1;
+      if (silentTurns.current >= 2) closeWith(UI[locale].silenceGoodbye, "silence");
+      else {
+        const key = `m${latest.current.messages.length}`;
+        const text = UI[locale].stillHere;
+        setMessages((prev) => [...prev, { role: "assistant", content: text }]);
+        void speak(text, locale, revealing(key, afterSpeaking));
+      }
+    }
   }
 
   function stopListening() {
@@ -580,6 +645,15 @@ export function MonkChat() {
                 <span className="sr-only"> {t.handsFreeNote}</span>
               </label>
             </>
+          ) : null}
+          {!ended ? (
+            <button
+              type="button"
+              onClick={endConversation}
+              className="rounded-full border border-[var(--line)] px-3 py-1 text-[var(--maroon)] transition-colors hover:border-[var(--maroon)]"
+            >
+              {t.end}
+            </button>
           ) : null}
           <button
             type="button"
@@ -787,6 +861,35 @@ export function MonkChat() {
         ) : null}
       </div>
 
+      {ended ? (
+        <div className="border-t border-[var(--line)] px-5 pb-4 pt-5 text-center" role="status">
+          <p className="font-serif text-lg text-[var(--maroon)]">{t.endedTitle}</p>
+          {ended === "limit" ? (
+            <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-[var(--muted)]">{t.guestEnded}</p>
+          ) : null}
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={beginAgain}
+              className="rounded-full bg-[var(--maroon)] px-5 py-2 text-sm text-[var(--paper)] transition-colors hover:bg-[var(--maroon-deep)]"
+            >
+              {t.newConversation}
+            </button>
+            {!profile ? (
+              <button
+                type="button"
+                onClick={() => setShowProfile(true)}
+                className="rounded-full border border-[var(--line)] px-5 py-2 text-sm text-[var(--maroon)] transition-colors hover:border-[var(--maroon)]"
+              >
+                {t.curatedPath}
+              </button>
+            ) : null}
+          </div>
+          <p className="mt-4 text-xs leading-5 text-[var(--muted)]">
+            <CrisisNote locale={locale} />
+          </p>
+        </div>
+      ) : (
       <form onSubmit={onSubmit} className="border-t border-[var(--line)] px-5 pb-3 pt-4">
         {blockedVoice ? (
           <div className="mb-3 flex justify-center">
@@ -860,6 +963,7 @@ export function MonkChat() {
           <CrisisNote locale={locale} />
         </p>
       </form>
+      )}
     </div>
   );
 }

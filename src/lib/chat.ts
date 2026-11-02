@@ -28,6 +28,8 @@ export type ChatReply = {
   content: string;
   citations: ChatCitation[];
   crisis: boolean;
+  /** The conversation has come to a close (goodbye, or the guest limit). */
+  ended?: boolean;
 };
 
 export type ChatContext = {
@@ -36,6 +38,8 @@ export type ChatContext = {
   region?: string | null;
   /** What the visitor chose to share on their personal path. */
   person?: { name?: string; intention?: string } | null;
+  /** This is the last reply of the conversation (e.g. a guest's sixth question). */
+  closing?: boolean;
 };
 
 const DEFAULT_CONTEXT: ChatContext = { locale: "en", region: null };
@@ -75,15 +79,19 @@ export async function answer(
 
   try {
     const { intent, passages, terms } = await findPassages(messages);
+    // Ending the conversation, or asking how to: no teaching needed.
+    if (intent === "how_to_end") return { content: text.howToEnd, citations: [], crisis: false };
+    if (intent === "farewell") return await farewellReply(messages, ctx);
     // A podcast to suggest, if one fits this conversation.
     const listening = terms ? await searchListening(terms, ctx.locale) : [];
     if (passages.length > 0 && intent !== "smalltalk") {
-      const grounded = await groundedAnswer(messages, passages, ctx.person, listening[0]);
-      if (grounded) return grounded;
+      const grounded = await groundedAnswer(messages, passages, ctx.person, listening[0], ctx.closing);
+      if (grounded) return { ...grounded, ended: ctx.closing || undefined };
     }
     if (isAboutTheSite(query)) return siteNote(messages, ctx);
     // Someone sharing how they are (or saying hello) gets listened to, not refused.
     if (intent !== "question") {
+      if (ctx.closing) return await farewellReply(messages, ctx);
       const listening = await listeningReply(messages, ctx.person);
       if (listening) return listening;
     }
@@ -95,7 +103,33 @@ export async function answer(
   }
 
   // A question that nothing in the teachings answers: say so honestly.
-  return { content: text.noTeaching, citations: [], crisis: false };
+  return { content: text.noTeaching, citations: [], crisis: false, ended: ctx.closing || undefined };
+}
+
+/**
+ * A warm goodbye: recall what the person brought (without new teaching), wish
+ * them well, and leave the door open.
+ */
+async function farewellReply(messages: ChatMessage[], ctx: ChatContext): Promise<ChatReply> {
+  const fallback = { content: SERVER_TEXT[ctx.locale].farewell, citations: [], crisis: false, ended: true };
+  try {
+    const reply = await claude({
+      model: MODELS.search,
+      maxTokens: 200,
+      system: [
+        COMPANION,
+        "The conversation is ending now. Write the Companion's warm goodbye in at most three short sentences:",
+        "thank them for sitting together, gently recall in their own words what they brought today (if anything), and wish them well, saying they can come back any time.",
+        "No new teaching, advice, practices or quotes. No question. Never name any teacher. Reply in the language of the person's messages. Output only the goodbye.",
+      ].join("\n"),
+      messages: [{ role: "user", content: `${aboutThePerson(ctx.person)}Conversation so far:\n${transcript(messages)}` }],
+    });
+    const clean = reply.replace(/^companion:\s*/i, "").trim();
+    if (!clean || clean.length > 500 || /\[\d+\]/.test(clean)) return fallback;
+    return { content: cleanForDisplay(await withoutTeacherNames(clean)), citations: [], crisis: false, ended: true };
+  } catch {
+    return fallback;
+  }
 }
 
 /** Site notes are written in English; translate them for other languages. */
@@ -138,7 +172,7 @@ function transcript(messages: ChatMessage[], turns = 8): string {
     .join("\n");
 }
 
-export type Intent = "question" | "share" | "smalltalk";
+export type Intent = "question" | "share" | "smalltalk" | "farewell" | "how_to_end";
 
 async function findPassages(
   messages: ChatMessage[],
@@ -152,7 +186,7 @@ async function findPassages(
       "Read the conversation and focus on the person's LATEST message, using earlier turns only for context " +
       '(e.g. if the companion asked "How are you feeling?" and the person said "stressed about work", search for stress). ' +
       'Reply with JSON only, no prose: {"intent": "...", "en": "...", "es": "...", "pt": "..."}. ' +
-      'intent is "question" (asks about a teaching or practice), "share" (tells how they feel or what is happening in their life), or "smalltalk" (greetings, thanks, "I\'m fine"). ' +
+      'intent is "question" (asks about a teaching or practice), "share" (tells how they feel or what is happening in their life), "smalltalk" (greetings, thanks, "I\'m fine"), "farewell" (wants to stop or end the conversation, says goodbye, "I have to go", "that\'s all for today"), or "how_to_end" (asks HOW to end, leave or close the conversation). ' +
       'Each language value is 3 to 8 key words or short phrases joined by " or ", in that language. ' +
       "Look beneath the story for the main mental state at work (anger, sadness, loneliness, attachment, jealousy, pride, fear or worry, guilt) and include both that state AND its Buddhist remedy, plus how the mind creates it (interpretation, perception, habit) " +
       '(e.g. resentment at a brother -> "anger or resentment or patience or habit or perception"; envy of a friend -> "jealousy or envy or rejoicing or happiness of others"; can\'t let go -> "attachment or impermanence or letting go"). ' +
@@ -160,13 +194,15 @@ async function findPassages(
     messages: [{ role: "user", content: transcript(messages, 6) }],
   });
   const intent = parseIntent(raw);
-  if (intent === "smalltalk") return { intent, passages: [] };
+  if (intent === "smalltalk" || intent === "farewell" || intent === "how_to_end") {
+    return { intent, passages: [] };
+  }
   const terms = parseSearchTerms(raw, latest);
   return { intent, passages: await searchTeachings(terms, 8), terms };
 }
 
 export function parseIntent(raw: string): Intent {
-  const m = raw.match(/"intent"\s*:\s*"(question|share|smalltalk)"/);
+  const m = raw.match(/"intent"\s*:\s*"(question|share|smalltalk|farewell|how_to_end)"/);
   return (m?.[1] as Intent | undefined) ?? "question";
 }
 
@@ -237,6 +273,7 @@ async function groundedAnswer(
   passages: Passage[],
   person?: ChatContext["person"],
   listening?: Listening,
+  closing?: boolean,
 ): Promise<ChatReply | null> {
   const numbered = passages
     .map((p, i) => `[${i + 1}] From "${p.title}" (language: ${p.language})\n${p.content}`)
@@ -273,6 +310,9 @@ async function groundedAnswer(
           (listening
             ? `Recommended listening you MAY suggest when you TEACH, only if it genuinely fits: [P] the podcast "${listening.title}" (language: ${listening.language}). ` +
               "If you suggest it, mention it once, warmly and briefly, with the marker [P] (e.g. \"there is also a podcast below on this [P]\"). Do not describe what it says beyond its title. Never suggest it when exploring.\n\n===\n\n"
+            : "") +
+          (closing
+            ? "THIS IS THE LAST REPLY OF THIS CONVERSATION. TEACH (do not explore), and instead of a closing question, end with one warm sentence closing the conversation and saying they are welcome to begin again any time.\n\n===\n\n"
             : "") +
           `Write the Companion's next reply to the person's latest message.`,
       },
