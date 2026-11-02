@@ -1,7 +1,7 @@
 export type KnowledgeChunk = {
   id: string;
   title: string;
-  sourceType: "talk" | "transcript" | "text" | "foundation";
+  sourceType: "talk" | "transcript" | "text" | "foundation" | "podcast";
   url?: string;
   timestamp?: string;
   text: string;

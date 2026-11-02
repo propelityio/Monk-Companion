@@ -5,8 +5,11 @@ import {
   citedNumbers,
   knowledgeBaseConfigured,
   parseSearchTerms,
+  searchListening,
   searchTeachings,
+  type Listening,
   type Passage,
+  type SearchTerms,
 } from "./teachings";
 
 export type ChatMessage = {
@@ -71,9 +74,11 @@ export async function answer(
   if (!knowledgeBaseConfigured()) return replyTo(messages, ctx);
 
   try {
-    const { intent, passages } = await findPassages(messages);
+    const { intent, passages, terms } = await findPassages(messages);
+    // A podcast to suggest, if one fits this conversation.
+    const listening = terms ? await searchListening(terms, ctx.locale) : [];
     if (passages.length > 0 && intent !== "smalltalk") {
-      const grounded = await groundedAnswer(messages, passages, ctx.person);
+      const grounded = await groundedAnswer(messages, passages, ctx.person, listening[0]);
       if (grounded) return grounded;
     }
     if (isAboutTheSite(query)) return siteNote(messages, ctx);
@@ -137,7 +142,7 @@ export type Intent = "question" | "share" | "smalltalk";
 
 async function findPassages(
   messages: ChatMessage[],
-): Promise<{ intent: Intent; passages: Passage[] }> {
+): Promise<{ intent: Intent; passages: Passage[]; terms?: SearchTerms }> {
   const latest = lastUserText(messages);
   const raw = await claude({
     model: MODELS.search,
@@ -156,7 +161,8 @@ async function findPassages(
   });
   const intent = parseIntent(raw);
   if (intent === "smalltalk") return { intent, passages: [] };
-  return { intent, passages: await searchTeachings(parseSearchTerms(raw, latest), 8) };
+  const terms = parseSearchTerms(raw, latest);
+  return { intent, passages: await searchTeachings(terms, 8), terms };
 }
 
 export function parseIntent(raw: string): Intent {
@@ -230,6 +236,7 @@ async function groundedAnswer(
   messages: ChatMessage[],
   passages: Passage[],
   person?: ChatContext["person"],
+  listening?: Listening,
 ): Promise<ChatReply | null> {
   const numbered = passages
     .map((p, i) => `[${i + 1}] From "${p.title}" (language: ${p.language})\n${p.content}`)
@@ -263,6 +270,10 @@ async function groundedAnswer(
           aboutThePerson(person) +
           `Conversation so far:\n${transcript(messages)}\n\n===\n\n` +
           `Passages from recorded Buddhist teachings:\n\n${numbered}\n\n===\n\n` +
+          (listening
+            ? `Recommended listening you MAY suggest when you TEACH, only if it genuinely fits: [P] the podcast "${listening.title}" (language: ${listening.language}). ` +
+              "If you suggest it, mention it once, warmly and briefly, with the marker [P] (e.g. \"there is also a podcast below on this [P]\"). Do not describe what it says beyond its title. Never suggest it when exploring.\n\n===\n\n"
+            : "") +
           `Write the Companion's next reply to the person's latest message.`,
       },
     ],
@@ -275,7 +286,7 @@ async function groundedAnswer(
   const body = mode ? reply.slice(mode[0].length).trim() : reply.trim();
   if (mode && mode[1].toUpperCase() === "EXPLORE") {
     // Guard: an exploring reply is short and carries no cited teaching.
-    if (!body || body.length > 600 || /\[\d+\]/.test(body)) return null;
+    if (!body || body.length > 600 || /\[\d+\]|\[P\]/.test(body)) return null;
     return {
       content: cleanForDisplay(await withoutTeacherNames(body)),
       citations: [],
@@ -297,6 +308,16 @@ async function groundedAnswer(
       title: p.title,
       sourceType: "transcript",
       url: p.video_url ?? undefined,
+    });
+  }
+
+  // A suggested podcast becomes a "Go deeper" link too.
+  if (listening && /\[P\]/.test(body)) {
+    citations.push({
+      id: `podcast-${listening.id}`,
+      title: listening.title,
+      sourceType: "podcast",
+      url: listening.url,
     });
   }
 
@@ -352,7 +373,7 @@ export function mentionsTeacher(text: string): boolean {
 /** Remove [n] citation markers and tidy the spacing they leave behind. */
 export function cleanForDisplay(text: string): string {
   return text
-    .replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, "")
+    .replace(/\s*\[(?:\d+(?:\s*,\s*\d+)*|P)\]/g, "")
     .replace(/[ \t]+([.,;:!?。、])/g, "$1")
     .replace(/[ \t]{2,}/g, " ")
     .trim();

@@ -663,12 +663,12 @@ export function MonkChat() {
             spokenFor(`m${i}`) === undefined &&
             !(message.role === "assistant" && mode === "voice" && !shownText.has(i)) ? (
               <>
-              {message.citations.some((c) => c.sourceType === "transcript") ? (
+              {message.citations.some((c) => c.sourceType === "transcript" || c.sourceType === "podcast") ? (
                 <p className="mt-3 text-xs text-[var(--muted)]">{t.goDeeper}</p>
               ) : null}
               <ul className="mt-1 flex flex-wrap gap-2">
                 {message.citations.map((c) => {
-                  const label = c.title;
+                  const label = c.sourceType === "podcast" ? `${t.podcast}: ${c.title}` : c.title;
                   return (
                     <li
                       key={c.id}

@@ -70,3 +70,37 @@ export function citedNumbers(answer: string, max: number): number[] {
   }
   return [...found].sort((a, b) => a - b);
 }
+
+export type Listening = {
+  id: string;
+  kind: string;
+  title: string;
+  language: string;
+  url: string;
+  rank: number;
+};
+
+/**
+ * Podcasts (and later videos) to suggest, matched on the same search terms and
+ * preferring the visitor's language. Returns [] if the table isn't set up yet.
+ */
+export async function searchListening(
+  terms: SearchTerms,
+  language: string,
+  limit = 2,
+): Promise<Listening[]> {
+  const base = (process.env.SUPABASE_URL ?? "").replace(/\/$/, "");
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  try {
+    const res = await fetch(`${base}/rest/v1/rpc/match_listening`, {
+      method: "POST",
+      headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ q_en: terms.en, q_es: terms.es, q_pt: terms.pt, lang: language, match_count: limit }),
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as Listening[];
+  } catch {
+    return [];
+  }
+}
