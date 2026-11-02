@@ -9,6 +9,7 @@ import {
   clearBell,
   markArrival,
   playBell,
+  playClosingBell,
   settleArrival,
   useArrivalPending,
   isTouchDevice,
@@ -82,6 +83,8 @@ export function MonkChat() {
   // The conversation has closed: why ("goodbye", "guest limit", "silence").
   const [ended, setEnded] = useState<null | "goodbye" | "limit" | "silence">(null);
   const endedRef = useRef<typeof ended>(null);
+  // The closing bell is ringing (the saffron dot breathes with it).
+  const [closingBell, setClosingBell] = useState(false);
   const silentTurns = useRef(0);
   /** Guests close after this many questions. */
   const GUEST_LIMIT = 6;
@@ -249,6 +252,34 @@ export function MonkChat() {
     if (latest.current.handsFree && getReplyMode() !== "text") latest.current.startListening();
   }
 
+  /**
+   * The conversation has closed and the Monk has finished speaking: ring the
+   * bell once, as on the way in. Visitors who chose text-only replies get
+   * silence, as they do at the start.
+   */
+  function ringClosingBell() {
+    if (getReplyMode() === "text") return;
+    setClosingBell(true);
+    void playClosingBell().then(() => setClosingBell(false));
+  }
+
+  /**
+   * Ring the closing bell once the Monk's last words have been spoken. If the
+   * device never reports the end of the voice (some browser voices don't),
+   * ring after roughly the time those words take to say.
+   */
+  function bellAfterSpeaking(text: string) {
+    let rung = false;
+    const ring = () => {
+      if (rung) return;
+      rung = true;
+      window.clearTimeout(fallback);
+      ringClosingBell();
+    };
+    const fallback = window.setTimeout(ring, 6000 + (text.length / 12) * 1000);
+    return ring;
+  }
+
   /** The Monk says a closing line (spoken in voice modes) and the chat closes. */
   function closeWith(text: string, why: "goodbye" | "limit" | "silence") {
     endedRef.current = why;
@@ -259,7 +290,7 @@ export function MonkChat() {
     setEnded(why);
     const replyMode = getReplyMode();
     if (replyMode === "text") revealSilently(key, text);
-    else void speak(text, locale, revealing(key));
+    else void speak(text, locale, revealing(key, bellAfterSpeaking(text)));
   }
 
   /** The End button. */
@@ -270,6 +301,7 @@ export function MonkChat() {
 
   /** "Begin a new conversation": a fresh start with the bell, like the home page. */
   function beginAgain() {
+    setClosingBell(false);
     markArrival();
     if (getReplyMode() !== "text") {
       playBell();
@@ -415,7 +447,11 @@ export function MonkChat() {
       if (closes) setEnded(endedRef.current);
       if (replyMode === "text") revealSilently(key, reply.content);
       if (replyMode !== "text") {
-        void speak(reply.content, locale, revealing(key, afterSpeaking));
+        void speak(
+          reply.content,
+          locale,
+          revealing(key, closes ? bellAfterSpeaking(reply.content) : afterSpeaking),
+        );
       }
     } catch {
       setMessages([
@@ -863,6 +899,12 @@ export function MonkChat() {
 
       {ended ? (
         <div className="border-t border-[var(--line)] px-5 pb-4 pt-5 text-center" role="status">
+          {closingBell ? (
+            <span
+              className="breath mx-auto mb-3 block h-2 w-2 rounded-full bg-[var(--saffron)]"
+              aria-hidden="true"
+            />
+          ) : null}
           <p className="font-serif text-lg text-[var(--maroon)]">{t.endedTitle}</p>
           {ended === "limit" ? (
             <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-[var(--muted)]">{t.guestEnded}</p>
