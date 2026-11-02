@@ -126,9 +126,16 @@ function synthBell(volume: number, fundamental = 262, onDone: () => void = finis
 // The same bell as the visit's opening one, rung once when a conversation
 // ends. Kept separate from the arrival bell so it never triggers a greeting.
 
-let closingAudio: HTMLAudioElement | null = null;
+let closingRinging = false;
 
-/** Ring the closing bell. Resolves when it has finished (at most 15 seconds). */
+/**
+ * Ring the closing bell. Resolves when it has finished (at most 15 seconds).
+ *
+ * It plays through the Monk's own voice player: phones (and Safari) only let
+ * a page play sound on an element that was started by a tap, and that player
+ * was warmed up by the visitor's taps and has just spoken the farewell. A
+ * brand-new player at this point would be silently blocked.
+ */
 export function playClosingBell(volume = 0.22): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   stopClosingBell();
@@ -137,6 +144,12 @@ export function playClosingBell(volume = 0.22): Promise<void> {
     const done = () => {
       if (settled) return;
       settled = true;
+      closingRinging = false;
+      try {
+        voicePlayer().volume = 1; // the Monk's voice plays at full volume
+      } catch {
+        /* no player */
+      }
       resolve();
     };
     window.setTimeout(done, 15000);
@@ -150,17 +163,23 @@ export function playClosingBell(volume = 0.22): Promise<void> {
       synthBell(volume, 262, done);
     };
     try {
-      const audio = new Audio(bellForThisVisit());
-      closingAudio = audio;
-      audio.volume = Math.min(1, volume * 3);
-      audio.onended = done;
-      audio.onpause = () => {
-        if (!audio.ended) done(); // stopped early (e.g. a new conversation began)
+      const el = voicePlayer();
+      el.onplay = el.ontimeupdate = null;
+      el.onended = done;
+      el.onpause = () => {
+        if (!el.ended) done(); // stopped early (e.g. a new conversation began)
       };
-      audio.onerror = () => fallBack(true);
-      // Blocked by the browser: the audio engine is usually already running
-      // after the conversation, so the synthesised bowl can still sound.
-      void audio.play().catch(() => fallBack(false));
+      el.onerror = () => {
+        el.onerror = null;
+        fallBack(true);
+      };
+      el.muted = false;
+      el.volume = Math.min(1, volume * 3);
+      el.src = bellForThisVisit();
+      closingRinging = true;
+      // Blocked anyway: the audio engine is usually already running after the
+      // conversation, so the synthesised bowl can still sound.
+      void el.play().catch(() => fallBack(false));
     } catch {
       fallBack(true);
     }
@@ -169,10 +188,16 @@ export function playClosingBell(volume = 0.22): Promise<void> {
 
 /** Silence the closing bell if it is still ringing. */
 export function stopClosingBell(): void {
-  if (!closingAudio) return;
-  const audio = closingAudio;
-  closingAudio = null;
-  audio.pause();
+  if (!closingRinging) return;
+  closingRinging = false;
+  try {
+    const el = voicePlayer();
+    el.pause();
+    el.onerror = null;
+    el.volume = 1;
+  } catch {
+    /* nothing to stop */
+  }
 }
 
 /** Resolves when the bell has finished ringing. */

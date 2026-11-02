@@ -296,6 +296,8 @@ export function MonkChat() {
   /** The End button. */
   function endConversation() {
     stopSpeaking();
+    // Inside the tap, so the phone lets the farewell and the closing bell play.
+    if (getReplyMode() !== "text") primeVoice();
     closeWith(SERVER_TEXT[locale].farewell, "goodbye");
   }
 
