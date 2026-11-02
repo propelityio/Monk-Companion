@@ -35,7 +35,12 @@ type SpeechRec = {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
-  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onresult:
+    | ((event: {
+        resultIndex: number;
+        results: ArrayLike<{ isFinal: boolean; 0?: { transcript: string } }>;
+      }) => void)
+    | null;
   onend: (() => void) | null;
   onerror?: ((event: { error: string }) => void) | null;
   start: () => void;
@@ -142,6 +147,14 @@ export function MonkChat() {
   const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState<GuestProfile>({ name: "", email: "", intention: "" });
   const recRef = useRef<SpeechRec | null>(null);
+  // One listening turn: everything heard so far, across pauses and restarts.
+  const listenRef = useRef<{
+    text: string;
+    interim: string;
+    silence: number;
+    done: boolean;
+    started: number;
+  } | null>(null);
   const sendingRef = useRef(false);
   const greetingText = moment
     ? `${withName(t.greetings[moment.time].hello, profile?.name)} ${pick(t.greetings[moment.time].questions, moment.variant)}`
@@ -157,6 +170,7 @@ export function MonkChat() {
     locale,
     revealKey: null as string | null,
     revealSilently: (key: string, text: string): unknown => [key, text],
+    input: "",
   });
   useEffect(() => {
     latest.current = {
@@ -168,6 +182,7 @@ export function MonkChat() {
       locale,
       revealKey: reveal?.key ?? null,
       revealSilently,
+      input,
     };
   });
 
@@ -244,6 +259,12 @@ export function MonkChat() {
     () => () => {
       stopSpeaking();
       window.clearTimeout(silentTimer.current);
+      const turn = listenRef.current;
+      if (turn) {
+        turn.done = true;
+        window.clearTimeout(turn.silence);
+        listenRef.current = null;
+      }
       recRef.current?.stop();
       recRef.current = null;
     },
@@ -358,6 +379,11 @@ export function MonkChat() {
     void send(input);
   }
 
+  // How long a silence ends the person's turn, and how long to wait for them
+  // to start. Generous, so thinking pauses and quiet voices aren't cut off.
+  const END_OF_TURN_MS = 3000;
+  const WAIT_TO_START_MS = 10000;
+
   function startListening() {
     primeVoice();
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -365,42 +391,101 @@ export function MonkChat() {
       setInput((prev) => prev || t.voiceUnavailable);
       return;
     }
-    if (recRef.current) return;
+    if (recRef.current || listenRef.current) return;
     stopSpeaking();
     stopSilentReveal();
     setReveal(null);
     setPaused(false);
+    listenRef.current = {
+      text: latest.current.input.trim(), // keep anything already typed
+      interim: "",
+      silence: 0,
+      done: false,
+      started: Date.now(),
+    };
+    waitForSilence(WAIT_TO_START_MS);
     try {
-      const rec = new Ctor();
-      rec.lang = SPEECH_LANG[locale];
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.onresult = (event) => {
-        const transcript = event.results[0]?.[0]?.transcript ?? "";
-        if (transcript) latest.current.send(transcript);
-      };
-      rec.onend = () => {
-        recRef.current = null;
-        setListening(false);
-      };
-      rec.onerror = (e) => {
-        if (e.error === "not-allowed" || e.error === "service-not-allowed") setMicNeedsTap(true);
-      };
-      recRef.current = rec;
-      rec.start();
+      openRecognizer(Ctor);
       setListening(true);
     } catch {
       // Some browsers (phones especially) only allow the mic after a tap.
-      recRef.current = null;
-      setListening(false);
+      endTurn(false);
       setMicNeedsTap(true);
     }
   }
 
-  function stopListening() {
-    recRef.current?.stop();
+  function openRecognizer(Ctor: new () => SpeechRec) {
+    const rec = new Ctor();
+    rec.lang = SPEECH_LANG[locale];
+    rec.continuous = true; // keep listening across pauses
+    rec.interimResults = true; // show words as they are heard
+    rec.onresult = (event) => {
+      const turn = listenRef.current;
+      if (!turn || turn.done) return;
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const words = result[0]?.transcript ?? "";
+        if (result.isFinal) turn.text = `${turn.text} ${words}`.trim();
+        else interim += words;
+      }
+      turn.interim = interim.trim();
+      setInput(`${turn.text} ${turn.interim}`.trim());
+      waitForSilence(END_OF_TURN_MS); // still talking: restart the silence clock
+    };
+    rec.onerror = (e) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        setMicNeedsTap(true);
+        endTurn(false);
+      }
+      // Other errors ("no-speech", network blips) are followed by onend.
+    };
+    rec.onend = () => {
+      recRef.current = null;
+      const turn = listenRef.current;
+      if (!turn || turn.done) return;
+      // The browser stopped on its own before the person finished: keep the
+      // words heard so far and listen again.
+      if (turn.interim) turn.text = `${turn.text} ${turn.interim}`.trim();
+      turn.interim = "";
+      if (Date.now() - turn.started > 5 * 60 * 1000) return endTurn(true);
+      try {
+        openRecognizer(Ctor);
+      } catch {
+        endTurn(true);
+      }
+    };
+    recRef.current = rec;
+    rec.start();
+  }
+
+  function waitForSilence(ms: number) {
+    const turn = listenRef.current;
+    if (!turn) return;
+    window.clearTimeout(turn.silence);
+    turn.silence = window.setTimeout(() => endTurn(true), ms);
+  }
+
+  /** Finish listening; send what was said unless `send` is false. */
+  function endTurn(send: boolean) {
+    const turn = listenRef.current;
+    if (!turn || turn.done) return;
+    turn.done = true;
+    window.clearTimeout(turn.silence);
+    listenRef.current = null;
+    try {
+      recRef.current?.stop();
+    } catch {
+      /* already stopped */
+    }
     recRef.current = null;
     setListening(false);
+    const said = `${turn.text} ${turn.interim}`.replace(/\s+/g, " ").trim();
+    if (send && said) latest.current.send(said);
+  }
+
+  function stopListening() {
+    endTurn(true); // the Stop button: send what was heard
   }
 
   function chooseMode(next: ReplyMode) {
