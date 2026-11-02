@@ -1,6 +1,6 @@
 /**
  * Shows text word by word as it is spoken. Words up to `spoken` characters fade
- * in from the left; the rest wait, invisible, in their final place (so the
+ * in, one after another from the left; the rest wait, invisible, in their final place (so the
  * layout never jumps). `spoken` undefined means "show everything".
  */
 export function RevealText({
@@ -12,7 +12,8 @@ export function RevealText({
   spoken?: number;
   offset?: number;
 }) {
-  if (spoken === undefined) return <>{text}</>;
+  // Always the same word-by-word markup, revealed or not, so the text isn't
+  // swapped for a plain copy (and redrawn) the moment the voice finishes.
   const parts: React.ReactNode[] = [];
   const re = /\S+|\s+/g;
   let m: RegExpExecArray | null;
@@ -21,7 +22,7 @@ export function RevealText({
     if (/^\s/.test(token)) {
       parts.push(token);
     } else {
-      const shown = offset + m.index < spoken;
+      const shown = spoken === undefined || offset + m.index < spoken;
       parts.push(
         <span key={m.index} className={shown ? "word word-in" : "word word-out"}>
           {token}

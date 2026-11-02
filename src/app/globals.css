@@ -62,22 +62,19 @@ body {
   .breath { animation: none; opacity: 0.9; }
 }
 
-/* Words appearing as the Monk speaks them: a soft fade in from the left. */
+/* Words appearing as the Monk speaks them: a soft fade, word after word.
+   Opacity only: sliding each word sideways made Chrome redraw the text as
+   every word settled, which showed as a flicker. */
 .word {
-  display: inline-block;
+  display: inline;
 }
 .word-out {
   opacity: 0;
-  transform: translateX(-0.4em);
 }
 .word-in {
   opacity: 1;
-  transform: none;
-  transition:
-    opacity 0.45s ease-out,
-    transform 0.45s ease-out;
+  transition: opacity 0.4s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
-  .word-out { transform: none; }
   .word-in { transition: opacity 0.2s linear; }
 }
