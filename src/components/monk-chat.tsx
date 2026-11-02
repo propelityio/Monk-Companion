@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { ChatCitation, ChatMessage } from "@/lib/chat";
-import { LOCALE_NAMES, LOCALES, SERVER_TEXT, SPEECH_LANG, UI, toLocale, type Locale } from "@/lib/i18n";
+import { SERVER_TEXT, SPEECH_LANG, UI, type Locale } from "@/lib/i18n";
 import { clearProfile, loadProfile, saveProfile, type GuestProfile } from "@/lib/profile";
 import {
   arrivedRecently,
@@ -24,7 +24,6 @@ import {
   detectRegion,
   getReplyMode,
   setHandsFree,
-  setLocale,
   setReplyMode,
   useGreetingMoment,
   useHandsFree,
@@ -623,24 +622,6 @@ export function MonkChat() {
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
-          <label className="flex items-center gap-2 text-[var(--muted)]">
-            <span className="sr-only">{t.language}</span>
-            <select
-              aria-label={t.language}
-              value={locale}
-              onChange={(e) => {
-                stopSpeaking();
-                setLocale(toLocale(e.target.value));
-              }}
-              className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-2 py-1 text-[var(--ink)]"
-            >
-              {LOCALES.map((l) => (
-                <option key={l} value={l}>
-                  {LOCALE_NAMES[l]}
-                </option>
-              ))}
-            </select>
-          </label>
           <div
             role="radiogroup"
             aria-label={t.replies}

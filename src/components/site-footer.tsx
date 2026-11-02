@@ -1,27 +1,16 @@
-import Link from "next/link";
-import { CrisisNote } from "./crisis-note";
 import { LocalizedCrisisNote } from "./localized-crisis-note";
-import { PoweredBy } from "./powered-by";
-
-const LINKS = [
-  { href: "/privacy", label: "Privacy Policy" },
-  { href: "/terms", label: "Terms of Service" },
-  { href: "/about", label: "About" },
-];
+import { FooterLinks } from "./footer-links";
 
 /**
  * Footer on every page: crisis note, then the site links and the Propelity
  * credit, centred. `compact` keeps it small on the chat page so the message
- * box stays in view on phones; `followLanguage` shows the crisis note in the
- * chat's chosen language.
+ * box stays in view on phones. The crisis note and links follow the visitor's chosen language.
  */
 export function SiteFooter({
   compact = false,
-  followLanguage = false,
   showCrisisNote = true,
 }: {
   compact?: boolean;
-  followLanguage?: boolean;
   /** The chat page shows the crisis note beside the message box instead. */
   showCrisisNote?: boolean;
 }) {
@@ -35,7 +24,7 @@ export function SiteFooter({
       {showCrisisNote ? (
         // Like the chat page: the crisis note, then a dividing line, then the links.
         <p className={`${pad} ${compact ? "py-3" : "py-5"}`}>
-          {followLanguage ? <LocalizedCrisisNote /> : <CrisisNote />}
+          <LocalizedCrisisNote />
         </p>
       ) : null}
       <div
@@ -43,18 +32,7 @@ export function SiteFooter({
           showCrisisNote ? "border-t border-[var(--line)]" : ""
         }`}
       >
-        <nav aria-label="Site" className="flex flex-wrap justify-center gap-x-6 gap-y-1">
-          {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="text-[var(--maroon)] underline-offset-2 hover:underline"
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-        <PoweredBy className={`text-center ${compact ? "mt-1" : "mt-3"}`} />
+        <FooterLinks compact={compact} />
       </div>
     </footer>
   );

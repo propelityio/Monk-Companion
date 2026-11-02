@@ -1,7 +1,14 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { regionFromTimeZone, timeOfDay, toLocale, type Locale, type TimeOfDay } from "./i18n";
+import {
+  LOCALES as LOCALE_TAGS,
+  regionFromTimeZone,
+  timeOfDay,
+  toLocale,
+  type Locale,
+  type TimeOfDay,
+} from "./i18n";
 
 // ---------- language: saved choice, else the browser's language ----------
 
@@ -20,6 +27,17 @@ function readLocale(): Locale {
     if (l !== "en" || tag.toLowerCase().startsWith("en")) return l;
   }
   return "en";
+}
+
+/** True when the visitor's device language isn't one of the screen languages. */
+export function deviceLanguageUnsupported(): boolean {
+  try {
+    if (window.localStorage.getItem(LOCALE_KEY)) return false; // they already chose
+    const tags = navigator.languages?.length ? navigator.languages : [navigator.language];
+    return !tags.some((tag) => (LOCALE_TAGS as readonly string[]).includes(tag.toLowerCase().split(/[-_]/)[0]));
+  } catch {
+    return false;
+  }
 }
 
 export function setLocale(locale: Locale) {

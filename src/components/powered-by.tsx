@@ -1,8 +1,8 @@
 /** "Powered by: Propelity", linking to propelity.io in a new tab. */
-export function PoweredBy({ className = "" }: { className?: string }) {
+export function PoweredBy({ className = "", label = "Powered by:" }: { className?: string; label?: string }) {
   return (
     <p className={`whitespace-nowrap ${className}`}>
-      Powered by:{" "}
+      {label}{" "}
       <a
         href="https://propelity.io"
         target="_blank"
