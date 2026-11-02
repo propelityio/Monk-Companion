@@ -628,7 +628,10 @@ export function MonkChat() {
                     aria-hidden="true"
                   />
                 ) : (
-                  <span aria-hidden="true">🔊</span>
+                  <span
+                    className="inline-block h-3 w-3 rounded-full bg-[var(--saffron)]"
+                    aria-hidden="true"
+                  />
                 )}
                 {t.spokenReply} · {t.showText}
               </button>
@@ -711,7 +714,8 @@ export function MonkChat() {
               }}
               className="flex items-center gap-2 rounded-full bg-[var(--maroon)] px-5 py-2 text-sm text-[var(--paper)]"
             >
-              <span aria-hidden="true">🔊</span> {t.tapToHear}
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--saffron)]" aria-hidden="true" />
+              {t.tapToHear}
             </button>
           </div>
         ) : micNeedsTap && handsFree && mode !== "text" && !speaking && !listening && !busy ? (
