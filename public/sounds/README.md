@@ -2,7 +2,9 @@ Entry bells, played when a visitor opens the chat. Each visit uses the next bell
 in turn (the list is `BELLS` in `src/lib/bell.ts`); the bell stays the same for
 the whole visit.
 
-Trimmed, faded and loudness-matched (about -20 LUFS) from the originals in
+Trimmed to 2 s with a natural ring-out (the level falls evenly in decibels after
+the strike, to silence at 2 s, rather than a straight-line fade that sounds cut off),
+and loudness-matched (about -20 LUFS) from the originals in
 `/sounds-source` (kept out of git):
 
 | File | Source | Clip |
