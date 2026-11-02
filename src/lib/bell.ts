@@ -12,10 +12,10 @@ let bellDone: Promise<void> = Promise.resolve();
 let finishBell: () => void = () => {};
 
 const PARTIALS: { ratio: number; gain: number; decay: number }[] = [
-  { ratio: 1, gain: 1, decay: 2 },
-  { ratio: 2.71, gain: 0.42, decay: 1.6 },
-  { ratio: 5.15, gain: 0.18, decay: 1.1 },
-  { ratio: 8.43, gain: 0.07, decay: 0.7 },
+  { ratio: 1, gain: 1, decay: 3 },
+  { ratio: 2.71, gain: 0.42, decay: 2.4 },
+  { ratio: 5.15, gain: 0.18, decay: 1.6 },
+  { ratio: 8.43, gain: 0.07, decay: 1 },
 ];
 
 /**
