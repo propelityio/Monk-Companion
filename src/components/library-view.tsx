@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { COLLECTIONS, playlistEmbed, type Collection } from "@/lib/library";
+import { COLLECTIONS, playlistEmbed, youtubeUrl, type Collection } from "@/lib/library";
 import { LOCALE_NAMES, UI, type Locale } from "@/lib/i18n";
 import { useLocale } from "@/lib/use-prefs";
 
@@ -16,6 +16,7 @@ export function LibraryView() {
   const params = useSearchParams();
   const requested = params.get("play");
   const requestedCollection = COLLECTIONS.find((c) => c.id === requested);
+  const requestedVideo = params.get("video");
   const [tab, setTab] = useState<Tab>(params.get("tab") === "podcasts" ? "podcasts" : "talks");
   const languages = [...new Set(COLLECTIONS.map((c) => c.language))];
   // Start with the visitor's language when there are talks in it.
@@ -94,11 +95,24 @@ export function LibraryView() {
                     {c.title}
                   </h2>
                   <p className="mt-2 flex-1 text-sm leading-6 text-[var(--muted)]">{c.about}</p>
-                  {open ? (
+                  {c.embeddable === false ? (
+                    // The owner doesn't allow playing these on other sites.
+                    <div className="mt-4">
+                      <p className="text-xs leading-5 text-[var(--muted)]">{t.youtubeOnly}</p>
+                      <a
+                        href={youtubeUrl(c.playlist, c.id === requestedCollection?.id ? requestedVideo : null)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 flex w-fit items-center gap-2 rounded-full border border-[var(--line)] px-4 py-2 text-sm text-[var(--maroon)] transition-colors hover:border-[var(--maroon)]"
+                      >
+                        {t.watchOnYoutube} ↗
+                      </a>
+                    </div>
+                  ) : open ? (
                     <div className="mt-4">
                       <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ aspectRatio: "16 / 9" }}>
                         <iframe
-                          src={playlistEmbed(c.playlist)}
+                          src={playlistEmbed(c.playlist, c.id === requestedCollection?.id ? requestedVideo : null)}
                           title={c.title}
                           className="absolute inset-0 h-full w-full"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

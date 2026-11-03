@@ -10,6 +10,12 @@ export type Collection = {
   kind: "meditations" | "classes" | "retreat";
   videos?: number;
   about: string; // short, in English
+  /**
+   * False when the channel that owns the videos doesn't allow them to be
+   * played on other websites (YouTube "Allow embedding" is off). Those can
+   * only be watched on YouTube until the owner turns embedding on.
+   */
+  embeddable?: boolean;
 };
 
 export const COLLECTIONS: Collection[] = [
@@ -39,6 +45,7 @@ export const COLLECTIONS: Collection[] = [
     kind: "classes",
     videos: 79,
     about: "Weekday classes, including Buddhist Tips for a Happy Life and Heart Advice for a Happy Life.",
+    embeddable: false,
   },
   {
     id: "saturday-2026",
@@ -48,6 +55,7 @@ export const COLLECTIONS: Collection[] = [
     kind: "classes",
     videos: 24,
     about: "Saturday classes from 2026.",
+    embeddable: false,
   },
   {
     id: "sunday-2026",
@@ -56,6 +64,7 @@ export const COLLECTIONS: Collection[] = [
     language: "en",
     kind: "classes",
     about: "Sunday classes from 2026.",
+    embeddable: false,
   },
   {
     id: "earlier-classes",
@@ -64,6 +73,7 @@ export const COLLECTIONS: Collection[] = [
     language: "en",
     kind: "classes",
     about: "Classes from earlier years.",
+    embeddable: false,
   },
   {
     id: "lam-rim-ano",
@@ -112,9 +122,15 @@ export const COLLECTIONS: Collection[] = [
   },
 ];
 
-/** Privacy-enhanced embed URL for a playlist (no YouTube cookies until played). */
-export function playlistEmbed(playlist: string): string {
-  return `https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(playlist)}&rel=0&modestbranding=1`;
+/**
+ * Privacy-enhanced embed URL (no YouTube cookies until played): the whole
+ * playlist, or one talk within it when `video` is given.
+ */
+export function playlistEmbed(playlist: string, video?: string | null): string {
+  const list = encodeURIComponent(playlist);
+  return video && /^[\w-]{11}$/.test(video)
+    ? `https://www.youtube-nocookie.com/embed/${video}?list=${list}&rel=0&modestbranding=1`
+    : `https://www.youtube-nocookie.com/embed/videoseries?list=${list}&rel=0&modestbranding=1`;
 }
 
 /**
@@ -126,6 +142,17 @@ export function libraryHref(source: { sourceType: string; id: string; url?: stri
     return `/library?tab=podcasts&play=${encodeURIComponent(source.id.replace(/^podcast-/, ""))}`;
   }
   const list = source.url?.match(/[?&]list=([\w-]+)/)?.[1];
+  const video = source.url?.match(/(?:[?&]v=|youtu\.be\/)([\w-]{11})/)?.[1];
   const collection = list ? COLLECTIONS.find((c) => c.playlist === list) : undefined;
-  return collection ? `/library?play=${collection.id}` : "/library";
+  if (!collection) return "/library";
+  // Open the exact talk when known, inside its collection.
+  return `/library?play=${collection.id}${video ? `&video=${video}` : ""}`;
+}
+
+/** The collection (or exact talk) on YouTube, for collections that can't be embedded. */
+export function youtubeUrl(playlist: string, video?: string | null): string {
+  const list = encodeURIComponent(playlist);
+  return video && /^[\w-]{11}$/.test(video)
+    ? `https://www.youtube.com/watch?v=${video}&list=${list}`
+    : `https://www.youtube.com/playlist?list=${list}`;
 }
