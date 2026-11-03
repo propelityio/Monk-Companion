@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { COLLECTIONS, playlistEmbed, type Collection } from "@/lib/library";
 import { LOCALE_NAMES, UI, type Locale } from "@/lib/i18n";
 import { useLocale } from "@/lib/use-prefs";
@@ -11,12 +12,20 @@ type Tab = "talks" | "podcasts";
 export function LibraryView() {
   const locale = useLocale();
   const t = UI[locale];
-  const [tab, setTab] = useState<Tab>("talks");
+  // A link from the chat can open a tab and a collection: /library?play=…&tab=…
+  const params = useSearchParams();
+  const requested = params.get("play");
+  const requestedCollection = COLLECTIONS.find((c) => c.id === requested);
+  const [tab, setTab] = useState<Tab>(params.get("tab") === "podcasts" ? "podcasts" : "talks");
   const languages = [...new Set(COLLECTIONS.map((c) => c.language))];
   // Start with the visitor's language when there are talks in it.
-  const [language, setLanguage] = useState<string | null>(null);
+  const [language, setLanguage] = useState<string | null>(requestedCollection?.language ?? null);
   const shown = language ?? (languages.includes(locale as Collection["language"]) ? locale : "all");
-  const [playing, setPlaying] = useState<string | null>(null);
+  const [playing, setPlaying] = useState<string | null>(requestedCollection?.id ?? null);
+  const openCard = useRef<HTMLLIElement | null>(null);
+  useEffect(() => {
+    if (requestedCollection) openCard.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [requestedCollection]);
   const kindLabel = { meditations: t.kindMeditations, classes: t.kindClasses, retreat: t.kindRetreat };
   const list = COLLECTIONS.filter((c) => shown === "all" || c.language === shown);
 
@@ -72,7 +81,8 @@ export function LibraryView() {
               return (
                 <li
                   key={c.id}
-                  className={`flex flex-col rounded-2xl border border-[var(--line)] bg-white/50 p-5 ${
+                  ref={open ? openCard : undefined}
+                  className={`scroll-mt-28 flex flex-col rounded-2xl border border-[var(--line)] bg-white/50 p-5 ${
                     open ? "sm:col-span-2" : ""
                   }`}
                 >

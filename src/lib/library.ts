@@ -116,3 +116,16 @@ export const COLLECTIONS: Collection[] = [
 export function playlistEmbed(playlist: string): string {
   return `https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(playlist)}&rel=0&modestbranding=1`;
 }
+
+/**
+ * Where a "Go deeper" link should go inside Monk Companion: the Library, with
+ * the matching collection (or podcast) open. Never an outside site.
+ */
+export function libraryHref(source: { sourceType: string; id: string; url?: string }): string {
+  if (source.sourceType === "podcast") {
+    return `/library?tab=podcasts&play=${encodeURIComponent(source.id.replace(/^podcast-/, ""))}`;
+  }
+  const list = source.url?.match(/[?&]list=([\w-]+)/)?.[1];
+  const collection = list ? COLLECTIONS.find((c) => c.playlist === list) : undefined;
+  return collection ? `/library?play=${collection.id}` : "/library";
+}

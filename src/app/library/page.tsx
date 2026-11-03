@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LibraryView } from "@/components/library-view";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -11,7 +12,9 @@ export default function LibraryPage() {
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader />
-      <LibraryView />
+      <Suspense fallback={<div className="flex-1" />}>
+        <LibraryView />
+      </Suspense>
       <SiteFooter />
     </div>
   );

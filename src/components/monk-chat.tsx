@@ -31,6 +31,8 @@ import {
   useReplyMode,
   type ReplyMode,
 } from "@/lib/use-prefs";
+import Link from "next/link";
+import { libraryHref } from "@/lib/library";
 import { CrisisNote } from "./crisis-note";
 import { RevealText } from "./reveal-text";
 
@@ -852,15 +854,11 @@ export function MonkChat() {
                       key={c.id}
                       className="rounded-full bg-[var(--saffron-soft)] px-2.5 py-0.5 text-xs text-[var(--maroon)]"
                     >
-                      {c.url ? (
-                        <a
-                          href={c.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline-offset-2 hover:underline"
-                        >
-                          {label} ↗
-                        </a>
+                      {c.sourceType === "transcript" || c.sourceType === "podcast" ? (
+                        // Opens the talk or podcast in Monk Companion's own Library.
+                        <Link href={libraryHref(c)} className="underline-offset-2 hover:underline">
+                          {label} →
+                        </Link>
                       ) : (
                         label
                       )}
