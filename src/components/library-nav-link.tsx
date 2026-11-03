@@ -11,7 +11,7 @@ export function LibraryNavLink() {
     <Link
       href="/library"
       lang={locale}
-      className="rounded-full px-2 py-1.5 text-[var(--maroon)] transition-colors hover:bg-[var(--maroon-soft)] sm:px-3"
+      className="rounded-full px-1.5 py-1.5 text-[var(--maroon)] transition-colors hover:bg-[var(--maroon-soft)] sm:px-3"
     >
       {UI[locale].library}
     </Link>
