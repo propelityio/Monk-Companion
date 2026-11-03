@@ -44,7 +44,8 @@ $$;
 revoke execute on function match_listening(text, text, text, text, int) from public, anon, authenticated;
 grant  execute on function match_listening(text, text, text, text, int) to service_role;
 
--- The first eight episodes (Google Drive). Topics come from the titles; edit as needed.
+-- Episodes (Google Drive). Titles and meanings come from the 'Media Descriptions' sheet;
+-- topics are English keywords used for matching. Add new episodes as new rows.
 insert into recommended_listening (id, title, language, topics, url) values
   ('karma-true-mechanics-en',   'The True Mechanics of Karma', 'en',
    'karma cause effect action result intention habit mind conditions',
@@ -69,6 +70,15 @@ insert into recommended_listening (id, title, language, topics, url) values
    'https://drive.google.com/file/d/1i8bjS5mV2ViQG34HMFa6folF2sYw2WzK/view'),
   ('karma-intention-de',        'Deine Absicht Bestimmt Dein Karma', 'de',
    'karma intention motivation action cause effect',
-   'https://drive.google.com/file/d/1aBeieigZEw6zMHqkej-_fLvQ-RhSAZrR/view')
+   'https://drive.google.com/file/d/1aBeieigZEw6zMHqkej-_fLvQ-RhSAZrR/view'),
+  ('karma-intention-zh',        '业力就是意图', 'zh',
+   'karma intention motivation action cause effect',
+   'https://drive.google.com/file/d/1S7sO9z1zSYxwZUzKfm65Q-FVN217N9nv/view'),
+  ('karma-mental-os-ja',        'カルマの正体は意図というメンタルOS', 'ja',
+   'karma intention mind mental habits motivation cause effect',
+   'https://drive.google.com/file/d/1wTgQAAGkt0vjVoH9wMItCD6pP5KztGiT/view'),
+  ('karma-vajrasattva-it',      'Come Purificare il Karma con Vajrasattva', 'it',
+   'karma purification purify guilt regret mistake vajrasattva practice meditation negative actions',
+   'https://drive.google.com/file/d/1lOwOGe9hi5rCc0paRr5LzRZVhdJcKaqs/view')
 on conflict (id) do update set
   title = excluded.title, language = excluded.language, topics = excluded.topics, url = excluded.url;
