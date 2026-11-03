@@ -2,6 +2,7 @@ import { ChatNavLink } from "./chat-nav-link";
 import { HomeLink } from "./home-link";
 import { LanguageHint } from "./language-hint";
 import { LanguageSelect } from "./language-select";
+import { LibraryNavLink } from "./library-nav-link";
 import { LotusMark } from "./lotus-mark";
 
 export function SiteHeader() {
@@ -15,8 +16,9 @@ export function SiteHeader() {
           <span className="text-xs text-[var(--muted)]">A Way Through Foundation</span>
         </span>
       </HomeLink>
-      <nav className="flex items-center gap-2 text-sm sm:gap-3">
+      <nav className="flex items-center gap-1 text-sm sm:gap-2">
         <LanguageSelect />
+        <LibraryNavLink />
         <ChatNavLink />
       </nav>
     </header>

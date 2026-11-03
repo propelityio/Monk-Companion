@@ -10,7 +10,7 @@ export function ChatNavLink() {
   return (
     <OpenChatLink
       lang={locale}
-      className="rounded-full px-3 py-1.5 text-[var(--maroon)] transition-colors hover:bg-[var(--maroon-soft)]"
+      className="rounded-full px-2 py-1.5 text-[var(--maroon)] sm:px-3 transition-colors hover:bg-[var(--maroon-soft)]"
     >
       {UI[locale].chatTitle}
     </OpenChatLink>
