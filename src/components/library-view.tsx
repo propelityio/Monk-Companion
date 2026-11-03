@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { COLLECTIONS, playlistEmbed, youtubeUrl, type Collection } from "@/lib/library";
+import { COLLECTION_VIDEOS } from "@/lib/library-videos";
 import { LOCALE_NAMES, UI, type Locale } from "@/lib/i18n";
 import { useLocale } from "@/lib/use-prefs";
 
@@ -95,39 +96,12 @@ export function LibraryView() {
                     {c.title}
                   </h2>
                   <p className="mt-2 flex-1 text-sm leading-6 text-[var(--muted)]">{c.about}</p>
-                  {c.embeddable === false ? (
-                    // The owner doesn't allow playing these on other sites.
-                    <div className="mt-4">
-                      <p className="text-xs leading-5 text-[var(--muted)]">{t.youtubeOnly}</p>
-                      <a
-                        href={youtubeUrl(c.playlist, c.id === requestedCollection?.id ? requestedVideo : null)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 flex w-fit items-center gap-2 rounded-full border border-[var(--line)] px-4 py-2 text-sm text-[var(--maroon)] transition-colors hover:border-[var(--maroon)]"
-                      >
-                        {t.watchOnYoutube} ↗
-                      </a>
-                    </div>
-                  ) : open ? (
-                    <div className="mt-4">
-                      <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ aspectRatio: "16 / 9" }}>
-                        <iframe
-                          src={playlistEmbed(c.playlist, c.id === requestedCollection?.id ? requestedVideo : null)}
-                          title={c.title}
-                          className="absolute inset-0 h-full w-full"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          allowFullScreen
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setPlaying(null)}
-                        className="mt-3 text-sm text-[var(--maroon)] underline-offset-2 hover:underline"
-                      >
-                        {t.closePlayer}
-                      </button>
-                    </div>
+                  {open ? (
+                    <CollectionPanel
+                      collection={c}
+                      startVideo={c.id === requestedCollection?.id ? requestedVideo : null}
+                      onClose={() => setPlaying(null)}
+                    />
                   ) : (
                     <button
                       type="button"
@@ -135,7 +109,7 @@ export function LibraryView() {
                       className="mt-4 flex w-fit items-center gap-2 rounded-full bg-[var(--maroon)] px-4 py-2 text-sm text-[var(--paper)] transition-colors hover:bg-[var(--maroon-deep)]"
                     >
                       <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--saffron)]" />
-                      {t.watch}
+                      {t.openCollection}
                     </button>
                   )}
                 </li>
@@ -145,5 +119,119 @@ export function LibraryView() {
         </>
       )}
     </main>
+  );
+}
+
+/**
+ * An open collection: the player (when the owner allows playing on other
+ * sites) and the list of its talks. Picking a talk plays it right here; for
+ * collections that can only be watched on YouTube, it opens that talk there.
+ */
+function CollectionPanel({
+  collection: c,
+  startVideo,
+  onClose,
+}: {
+  collection: Collection;
+  startVideo: string | null;
+  onClose: () => void;
+}) {
+  const t = UI[useLocale()];
+  const videos = COLLECTION_VIDEOS[c.id] ?? [];
+  const embeddable = c.embeddable !== false;
+  const [current, setCurrent] = useState<string | null>(
+    startVideo && videos.some(([id]) => id === startVideo) ? startVideo : (videos[0]?.[0] ?? null),
+  );
+  const [picked, setPicked] = useState(false); // autoplay only after a choice
+  const listRef = useRef<HTMLOListElement | null>(null);
+  useEffect(() => {
+    // Show the current talk in the list (e.g. arriving from a chat link).
+    const item = listRef.current?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (item && listRef.current) listRef.current.scrollTop = item.offsetTop - listRef.current.offsetTop - 8;
+  }, []);
+
+  return (
+    <div className="mt-4 grid gap-4 lg:grid-cols-[3fr_2fr] lg:items-start">
+      {embeddable ? (
+        <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ aspectRatio: "16 / 9" }}>
+          <iframe
+            key={current ?? "list"}
+            src={playlistEmbed(c.playlist, current) + (picked ? "&autoplay=1" : "")}
+            title={videos.find(([id]) => id === current)?.[1] ?? c.title}
+            className="absolute inset-0 h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        </div>
+      ) : (
+        <p className="text-xs leading-5 text-[var(--muted)] lg:col-span-2">{t.youtubeOnly}</p>
+      )}
+      <div className={embeddable ? "" : "lg:col-span-2"}>
+        <p className="text-xs text-[var(--muted)]">
+          {t.talksInCollection} · {videos.length}
+        </p>
+        <ol
+          ref={listRef}
+          className="mt-2 max-h-72 divide-y divide-[var(--line)] overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--paper)] lg:max-h-[22rem]"
+        >
+          {videos.map(([id, title], i) => {
+            const isCurrent = id === current;
+            const inner = (
+              <>
+                <span className="w-7 shrink-0 text-right text-xs tabular-nums text-[var(--muted)]">{i + 1}</span>
+                <span className="flex-1" lang={c.language}>
+                  {title}
+                </span>
+                {isCurrent && embeddable ? (
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs text-[var(--saffron)]">
+                    <span aria-hidden="true" className="breath inline-block h-2 w-2 rounded-full bg-[var(--saffron)]" />
+                    {t.nowPlaying}
+                  </span>
+                ) : null}
+                {!embeddable ? <span aria-hidden="true" className="text-[var(--muted)]">↗</span> : null}
+              </>
+            );
+            const cls = `flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
+              isCurrent ? "bg-[var(--saffron-soft)]/60 text-[var(--maroon)]" : "text-[var(--ink)] hover:bg-[var(--maroon-soft)]"
+            }`;
+            return (
+              <li key={`${id}-${i}`}>
+                {embeddable ? (
+                  <button
+                    type="button"
+                    aria-current={isCurrent ? "true" : undefined}
+                    onClick={() => {
+                      setPicked(true);
+                      setCurrent(id);
+                    }}
+                    className={cls}
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <a
+                    href={youtubeUrl(c.playlist, id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-current={isCurrent ? "true" : undefined}
+                    className={cls}
+                  >
+                    {inner}
+                  </a>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-3 text-sm text-[var(--maroon)] underline-offset-2 hover:underline"
+        >
+          {t.closePlayer}
+        </button>
+      </div>
+    </div>
   );
 }

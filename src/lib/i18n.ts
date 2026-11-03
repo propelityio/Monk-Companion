@@ -98,6 +98,9 @@ type UiText = {
   podcastsSoon: string;
   youtubeOnly: string;
   watchOnYoutube: string;
+  openCollection: string;
+  talksInCollection: string;
+  nowPlaying: string;
   tapToSpeak: string;
   aiVoiceNote: string;
   notAdvice: string;
@@ -183,6 +186,9 @@ export const UI: Record<Locale, UiText> = {
     podcastsSoon: "Podcasts will be playable here soon.",
     youtubeOnly: "The center that hosts these classes allows them to be watched only on YouTube.",
     watchOnYoutube: "Watch on YouTube",
+    openCollection: "Open",
+    talksInCollection: "Talks in this collection",
+    nowPlaying: "Now playing",
     tapToSpeak: "Tap Speak to answer",
     notAdvice: "Not therapy or medical advice.",
     crisisIn: (c, l, t) => `If you are in crisis in ${c}, ${t ? "call or text" : "call"} ${l}, or contact your local emergency number.`,
@@ -311,6 +317,9 @@ export const UI: Record<Locale, UiText> = {
     podcastsSoon: "Pronto podrás escuchar los pódcasts aquí.",
     youtubeOnly: "El centro que aloja estas clases solo permite verlas en YouTube.",
     watchOnYoutube: "Ver en YouTube",
+    openCollection: "Abrir",
+    talksInCollection: "Charlas de esta colección",
+    nowPlaying: "Reproduciendo",
     tapToSpeak: "Toca Hablar para responder",
     notAdvice: "No es terapia ni consejo médico.",
     crisisIn: (c, l, t) => `Si estás en crisis en ${c}, ${t ? "llama o envía un mensaje al" : "llama al"} ${l}, o contacta con el número de emergencias local.`,
@@ -439,6 +448,9 @@ export const UI: Record<Locale, UiText> = {
     podcastsSoon: "Em breve os podcasts poderão ser ouvidos aqui.",
     youtubeOnly: "O centro que hospeda estas aulas só permite assisti-las no YouTube.",
     watchOnYoutube: "Assistir no YouTube",
+    openCollection: "Abrir",
+    talksInCollection: "Palestras desta coleção",
+    nowPlaying: "Tocando agora",
     tapToSpeak: "Toque em Falar para responder",
     notAdvice: "Não é terapia nem aconselhamento médico.",
     crisisIn: (c, l, t) => `Se você estiver em crise (${c}), ${t ? "ligue ou envie mensagem para o" : "ligue para o"} ${l}, ou contate o número de emergência local.`,
@@ -567,6 +579,9 @@ export const UI: Record<Locale, UiText> = {
     podcastsSoon: "Les podcasts pourront bientôt être écoutés ici.",
     youtubeOnly: "Le centre qui héberge ces cours ne permet de les regarder que sur YouTube.",
     watchOnYoutube: "Regarder sur YouTube",
+    openCollection: "Ouvrir",
+    talksInCollection: "Enseignements de cette collection",
+    nowPlaying: "En cours",
     tapToSpeak: "Touchez Parler pour répondre",
     notAdvice: "Ceci n’est ni une thérapie ni un avis médical.",
     crisisIn: (c, l, t) => `Si vous êtes en crise (${c}), ${t ? "appelez ou écrivez au" : "appelez le"} ${l}, ou contactez le numéro d’urgence local.`,
@@ -695,6 +710,9 @@ export const UI: Record<Locale, UiText> = {
     podcastsSoon: "Podcasts können hier bald angehört werden.",
     youtubeOnly: "Das Zentrum, das diese Kurse veröffentlicht, erlaubt das Ansehen nur auf YouTube.",
     watchOnYoutube: "Auf YouTube ansehen",
+    openCollection: "Öffnen",
+    talksInCollection: "Vorträge in dieser Sammlung",
+    nowPlaying: "Läuft gerade",
     tapToSpeak: "Tippen Sie auf Sprechen, um zu antworten",
     notAdvice: "Keine Therapie oder medizinische Beratung.",
     crisisIn: (c, l, t) => `Wenn Sie in einer Krise sind (${c}), rufen Sie die ${l} an${t ? " oder schreiben Sie eine SMS" : ""} oder wählen Sie den örtlichen Notruf.`,
@@ -823,6 +841,9 @@ export const UI: Record<Locale, UiText> = {
     podcastsSoon: "Presto potrai ascoltare i podcast qui.",
     youtubeOnly: "Il centro che ospita queste lezioni consente di guardarle solo su YouTube.",
     watchOnYoutube: "Guarda su YouTube",
+    openCollection: "Apri",
+    talksInCollection: "Insegnamenti di questa raccolta",
+    nowPlaying: "In riproduzione",
     tapToSpeak: "Tocca Parla per rispondere",
     notAdvice: "Non è terapia né consulenza medica.",
     crisisIn: (c, l, t) => `Se sei in crisi (${c}), ${t ? "chiama o scrivi al" : "chiama il"} ${l}, oppure contatta il numero di emergenza locale.`,
@@ -951,6 +972,9 @@ export const UI: Record<Locale, UiText> = {
     podcastsSoon: "播客即将可以在这里收听。",
     youtubeOnly: "发布这些课程的中心仅允许在 YouTube 上观看。",
     watchOnYoutube: "在 YouTube 上观看",
+    openCollection: "打开",
+    talksInCollection: "本合集中的开示",
+    nowPlaying: "正在播放",
     tapToSpeak: "点按“说话”来回答",
     notAdvice: "这不是心理治疗或医疗建议。",
     crisisIn: (c, l, t) => `如果你在${c}正处于危机中，请拨打${t ? "或发短信至" : ""} ${l}，或联系当地紧急电话。`,
@@ -1050,6 +1074,9 @@ export const UI: Record<Locale, UiText> = {
     podcastsSoon: "ポッドキャストはまもなくここで聴けるようになります。",
     youtubeOnly: "これらのクラスを公開しているセンターは、YouTube でのみ視聴を許可しています。",
     watchOnYoutube: "YouTube で見る",
+    openCollection: "開く",
+    talksInCollection: "このコレクションの法話",
+    nowPlaying: "再生中",
     tapToSpeak: "「話す」をタップして答える",
     notAdvice: "これはセラピーや医療上の助言ではありません。",
     crisisIn: (c, l, t) => `${c}で危機的な状況にある場合は、${l} に${t ? "電話またはメッセージ" : "電話"}するか、地域の緊急番号に連絡してください。`,
