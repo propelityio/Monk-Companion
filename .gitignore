@@ -47,3 +47,7 @@ next-env.d.ts
 
 # original, untrimmed bell recordings (large; trimmed versions live in public/sounds)
 /sounds-source/
+
+# podcast audio (originals from Drive, and compressed copies for R2): never in git
+/media-source/
+/media-out/
