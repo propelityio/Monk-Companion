@@ -984,7 +984,7 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
   en: {
     empty: "Sit for a moment and say what is here. You may type or speak. No account is needed.",
     noTeaching:
-      "I don’t yet have a recorded teaching that speaks to this. As more talks and transcripts are added, I will share them rather than invent an answer.",
+      "That's a beautiful question. I don't have a teaching on it just yet, and I'd rather not guess. Is there something behind the question that you'd like to explore together?",
     error: "I could not reach the teachings just now. Please try again in a moment.",
     howToEnd: "Whenever you're ready, you can simply say goodbye, or tap End at the top of the chat. You can also tap the lotus to start fresh.",
     farewell: "Thank you for sitting with me today. Be gentle with yourself, and come back whenever you like.",
@@ -992,7 +992,7 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
   es: {
     empty: "Siéntate un momento y di lo que está aquí. Puedes escribir o hablar. No necesitas una cuenta.",
     noTeaching:
-      "Todavía no tengo una enseñanza grabada que hable de esto. A medida que se añadan más charlas y transcripciones, las compartiré en lugar de inventar una respuesta.",
+      "Es una pregunta muy bonita. Todavía no tengo una enseñanza sobre ella, y prefiero no adivinar. ¿Hay algo detrás de tu pregunta que te gustaría que exploráramos juntos?",
     error: "No pude acceder a las enseñanzas en este momento. Inténtalo de nuevo en un momento.",
     howToEnd: "Cuando quieras, puedes simplemente despedirte o tocar Terminar en la parte superior del chat. También puedes tocar el loto para empezar de nuevo.",
     farewell: "Gracias por compartir este rato conmigo. Sé amable contigo, y vuelve cuando quieras.",
@@ -1000,7 +1000,7 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
   pt: {
     empty: "Sente-se por um momento e diga o que está aqui. Você pode escrever ou falar. Não é preciso ter conta.",
     noTeaching:
-      "Ainda não tenho um ensinamento gravado que fale sobre isso. À medida que mais palestras e transcrições forem adicionadas, vou compartilhá-las em vez de inventar uma resposta.",
+      "Que pergunta bonita. Ainda não tenho um ensinamento sobre isso, e prefiro não adivinhar. Há algo por trás da sua pergunta que você gostaria de explorar comigo?",
     error: "Não consegui acessar os ensinamentos agora. Tente novamente em um momento.",
     howToEnd: "Quando quiser, você pode simplesmente se despedir ou tocar em Encerrar no topo da conversa. Você também pode tocar no lótus para recomeçar.",
     farewell: "Obrigado por estar comigo hoje. Seja gentil com você, e volte quando quiser.",
@@ -1008,7 +1008,7 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
   fr: {
     empty: "Asseyez-vous un instant et dites ce qui est là. Vous pouvez écrire ou parler. Aucun compte n’est nécessaire.",
     noTeaching:
-      "Je n’ai pas encore d’enseignement enregistré qui parle de cela. Lorsque d’autres enseignements et transcriptions seront ajoutés, je les partagerai plutôt que d’inventer une réponse.",
+      "C’est une très belle question. Je n’ai pas encore d’enseignement à ce sujet, et je préfère ne pas deviner. Y a-t-il quelque chose derrière cette question que vous aimeriez explorer ensemble ?",
     error: "Je n’ai pas pu accéder aux enseignements pour l’instant. Réessayez dans un moment.",
     howToEnd: "Quand vous le souhaitez, dites simplement au revoir, ou touchez Terminer en haut de la conversation. Vous pouvez aussi toucher le lotus pour recommencer.",
     farewell: "Merci d’avoir pris ce moment avec moi. Soyez doux avec vous-même, et revenez quand vous voulez.",
@@ -1016,7 +1016,7 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
   de: {
     empty: "Halten Sie einen Moment inne und sagen Sie, was gerade da ist. Sie können schreiben oder sprechen. Ein Konto ist nicht nötig.",
     noTeaching:
-      "Ich habe noch keine aufgezeichnete Unterweisung, die darauf eingeht. Sobald weitere Vorträge und Abschriften hinzukommen, teile ich sie, statt eine Antwort zu erfinden.",
+      "Das ist eine schöne Frage. Dazu habe ich noch keine Unterweisung, und ich möchte lieber nicht raten. Steckt hinter der Frage etwas, das Sie gemeinsam mit mir erkunden möchten?",
     error: "Ich konnte die Unterweisungen gerade nicht erreichen. Bitte versuchen Sie es gleich noch einmal.",
     howToEnd: "Wann immer Sie möchten, verabschieden Sie sich einfach oder tippen Sie oben im Gespräch auf Beenden. Mit dem Lotus beginnen Sie neu.",
     farewell: "Danke, dass Sie sich heute Zeit genommen haben. Seien Sie gut zu sich, und kommen Sie gern wieder.",
@@ -1024,7 +1024,7 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
   it: {
     empty: "Siediti un momento e di’ ciò che è qui. Puoi scrivere o parlare. Non serve un account.",
     noTeaching:
-      "Non ho ancora un insegnamento registrato che parli di questo. Man mano che verranno aggiunti altri discorsi e trascrizioni, li condividerò invece di inventare una risposta.",
+      "È una bella domanda. Non ho ancora un insegnamento su questo, e preferisco non tirare a indovinare. C’è qualcosa dietro la tua domanda che vorresti esplorare insieme?",
     error: "Non sono riuscito a raggiungere gli insegnamenti in questo momento. Riprova tra poco.",
     howToEnd: "Quando vuoi, puoi semplicemente salutare o toccare Termina in alto nella conversazione. Puoi anche toccare il loto per ricominciare.",
     farewell: "Grazie per essere stato qui con me oggi. Sii gentile con te stesso, e torna quando vuoi.",
@@ -1032,7 +1032,7 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
   zh: {
     empty: "静坐片刻，说出此刻心中所有。你可以打字或说话，无需账户。",
     noTeaching:
-      "目前还没有录制的教法谈到这个问题。随着更多开示和文字稿加入，我会与你分享，而不会编造回答。",
+      "这是个很好的问题。我目前还没有这方面的教法，也不想随意猜测。这个问题背后，有没有什么你想和我一起探讨的？",
     error: "刚才无法读取教法，请稍后再试。",
     howToEnd: "准备好时，你可以直接道别，或点按对话顶部的“结束”。也可以点按莲花重新开始。",
     farewell: "谢谢你今天和我在一起。善待自己，随时欢迎回来。",
@@ -1040,7 +1040,7 @@ export const SERVER_TEXT: Record<Locale, ServerText> = {
   ja: {
     empty: "少しのあいだ座って、今ここにあることを言葉にしてみてください。文字でも声でも構いません。アカウントは不要です。",
     noTeaching:
-      "これについて語る録音された教えは、まだありません。法話や書き起こしが増えれば、答えを作り出すのではなく、それをお伝えします。",
+      "すてきな問いですね。それについての教えはまだありません。推測でお答えするのは控えたいと思います。この問いの奥に、一緒に見つめてみたいことはありますか？",
     error: "今は教えにアクセスできませんでした。少ししてからもう一度お試しください。",
     howToEnd: "いつでも、さよならと言うか、上の「終了」をタップしてください。蓮をタップすると最初からやり直せます。",
     farewell: "今日は一緒に過ごしてくれてありがとう。自分にやさしく。いつでもまた来てください。",
