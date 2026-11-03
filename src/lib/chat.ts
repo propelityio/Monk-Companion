@@ -5,6 +5,7 @@ import {
   citedNumbers,
   knowledgeBaseConfigured,
   parseSearchTerms,
+  logUnanswered,
   searchListening,
   searchTeachings,
   type Listening,
@@ -30,6 +31,8 @@ export type ChatReply = {
   crisis: boolean;
   /** The conversation has come to a close (goodbye, or the guest limit). */
   ended?: boolean;
+  /** Internal: a nearby teaching was offered instead of an answer. */
+  offered?: boolean;
 };
 
 export type ChatContext = {
@@ -86,6 +89,12 @@ export async function answer(
     const listening = terms ? await searchListening(terms, ctx.locale) : [];
     if (passages.length > 0 && intent !== "smalltalk") {
       const grounded = await groundedAnswer(messages, passages, ctx.person, listening[0], ctx.closing);
+      if (grounded?.offered) {
+        if (intent === "question") await logUnanswered(query, ctx.locale, "offered_nearby", terms?.en);
+        const { offered: _offered, ...reply } = grounded;
+        void _offered;
+        return { ...reply, ended: ctx.closing || undefined };
+      }
       if (grounded) return { ...grounded, ended: ctx.closing || undefined };
     }
     if (isAboutTheSite(query)) return siteNote(messages, ctx);
@@ -94,6 +103,12 @@ export async function answer(
       if (ctx.closing) return await farewellReply(messages, ctx);
       const listening = await listeningReply(messages, ctx.person);
       if (listening) return listening;
+    } else {
+      // A question nothing in the teachings is close to: note it for the
+      // foundation, then answer personally and honestly.
+      await logUnanswered(query, ctx.locale, "no_teaching", terms?.en);
+      const notYet = await personalNotYet(messages, ctx);
+      if (notYet) return notYet;
     }
   } catch (err) {
     console.error("[chat] knowledge base error:", err);
@@ -104,6 +119,36 @@ export async function answer(
 
   // A question that nothing in the teachings answers: say so honestly.
   return { content: text.noTeaching, citations: [], crisis: false, ended: ctx.closing || undefined };
+}
+
+/**
+ * No teaching speaks to this question: respond to their specific question in
+ * the companion's own words, honestly, and invite them to explore what's behind it.
+ */
+async function personalNotYet(messages: ChatMessage[], ctx: ChatContext): Promise<ChatReply | null> {
+  try {
+    const reply = await claude({
+      model: MODELS.search,
+      maxTokens: 200,
+      system: [
+        COMPANION,
+        "None of the recorded teachings speak to what the person just asked.",
+        "Write at most three short sentences: warmly acknowledge their specific question in your own words (without answering it), say honestly that you don't have a teaching on it yet and would rather not guess, and gently ask what is drawing them to this question, or what is behind it.",
+        "Do NOT answer the question. No Buddhist ideas, advice, practices or quotes. Never name any teacher. Reply in the language of the person's latest message. Output only the reply.",
+      ].join("\n"),
+      messages: [{ role: "user", content: `${aboutThePerson(ctx.person)}Conversation so far:\n${transcript(messages)}` }],
+    });
+    const clean = reply.replace(/^companion:\s*/i, "").trim();
+    if (!clean || clean.length > 450 || /\[\d+\]/.test(clean)) return null;
+    return {
+      content: cleanForDisplay(await withoutTeacherNames(clean)),
+      citations: [],
+      crisis: false,
+      ended: ctx.closing || undefined,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -190,7 +235,8 @@ async function findPassages(
       'Each language value is 3 to 8 key words or short phrases joined by " or ", in that language. ' +
       "Look beneath the story for the main mental state at work (anger, sadness, loneliness, attachment, jealousy, pride, fear or worry, guilt) and include both that state AND its Buddhist remedy, plus how the mind creates it (interpretation, perception, habit) " +
       '(e.g. resentment at a brother -> "anger or resentment or patience or habit or perception"; envy of a friend -> "jealousy or envy or rejoicing or happiness of others"; can\'t let go -> "attachment or impermanence or letting go"). ' +
-      'No stop words, no quotes, no punctuation besides "or". For smalltalk use empty strings.',
+      'No stop words, no quotes, no punctuation besides "or". For smalltalk use empty strings. ' +
+      'If the companion just offered to share a related teaching and the person accepts ("yes", "please", "sure"), the intent is "question" and the search terms are that offered theme.',
     messages: [{ role: "user", content: transcript(messages, 6) }],
   });
   const intent = parseIntent(raw);
@@ -292,7 +338,8 @@ async function groundedAnswer(
       "1. Any teaching, idea, practice or advice you give must come ONLY from the numbered passages. Do not add Buddhist teachings, quotes, practices or facts from anywhere else, even if you know them.",
       "2. Cite each teaching point with its passage number in square brackets, like [2].",
       "3. You may, without a citation: briefly acknowledge what the person shared in their own terms (one short sentence), and end with ONE gentle, open follow-up question that invites them to reflect or say more. Never put new teaching into those uncited sentences.",
-      `4. If the passages do not genuinely relate to what the person said, reply with exactly ${NO_ANSWER} and nothing else.`,
+      "4. If the passages don't answer what the person asked but are CLOSE to it (a related theme), don't stretch them to fit. Instead start your reply with the line MODE: OFFER and write, in under about 50 words: one gentle sentence saying you don't have a teaching on exactly that, then name in plain words the nearby theme these teachings do speak to, and ask whether they would like to hear about it. No teaching content yet, no citations.",
+      `   If the passages are not even close, reply with exactly ${NO_ANSWER} and nothing else.`,
       '5. In the passages, "Teacher:" marks the teacher. Lines marked "Student:", "Participant:" or with any other name are students speaking. Never present their words as teaching.',
       "6. Reply in the language of the person's latest message, even if the passages are in another language. Keep the teaching's meaning; do not invent wording and present it as a quote.",
       "7. NEVER name any teacher, monk or speaker, even if a name appears in the passages.",
@@ -322,8 +369,18 @@ async function groundedAnswer(
   if (!reply || reply.includes(NO_ANSWER)) return null;
 
   // Exploring: a reflection and a question or two, with no teaching in it.
-  const mode = reply.match(/^\s*MODE:\s*(EXPLORE|TEACH)\s*\n?/i);
+  const mode = reply.match(/^\s*MODE:\s*(EXPLORE|TEACH|OFFER)\s*\n?/i);
   const body = mode ? reply.slice(mode[0].length).trim() : reply.trim();
+  if (mode && mode[1].toUpperCase() === "OFFER") {
+    // Offering a nearby teaching, with permission: short, nothing taught yet.
+    if (!body || body.length > 450 || /\[\d+\]|\[P\]/.test(body)) return null;
+    return {
+      content: cleanForDisplay(await withoutTeacherNames(body)),
+      citations: [],
+      crisis: false,
+      offered: true,
+    };
+  }
   if (mode && mode[1].toUpperCase() === "EXPLORE") {
     // Guard: an exploring reply is short and carries no cited teaching.
     if (!body || body.length > 600 || /\[\d+\]|\[P\]/.test(body)) return null;

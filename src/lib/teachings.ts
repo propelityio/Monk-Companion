@@ -104,3 +104,45 @@ export async function searchListening(
     return [];
   }
 }
+
+/** Remove email addresses, phone numbers and links before keeping a question. */
+export function redact(text: string): string {
+  return text
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, "[email]")
+    .replace(/https?:\/\/\S+|www\.\S+/gi, "[link]")
+    .replace(/\+?\d[\d\s().-]{7,}\d/g, "[number]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 500);
+}
+
+/**
+ * Keep an unanswered question for the foundation's to-do list. Never blocks or
+ * breaks a reply: if the table isn't set up yet, nothing happens.
+ */
+export async function logUnanswered(
+  question: string,
+  language: string,
+  outcome: "offered_nearby" | "no_teaching",
+  topics = "",
+): Promise<void> {
+  const base = (process.env.SUPABASE_URL ?? "").replace(/\/$/, "");
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  const clean = redact(question);
+  if (!base || !key || clean.length < 3) return;
+  try {
+    await fetch(`${base}/rest/v1/unanswered_questions`, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ question: clean, language, outcome, topics: topics.slice(0, 300) }),
+      cache: "no-store",
+    });
+  } catch {
+    /* the to-do list is a nicety; never affect the conversation */
+  }
+}
