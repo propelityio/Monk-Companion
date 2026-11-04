@@ -6,6 +6,7 @@ import { COLLECTIONS, playlistEmbed, youtubeUrl, type Collection } from "@/lib/l
 import { COLLECTION_VIDEOS } from "@/lib/library-videos";
 import { LOCALE_NAMES, UI, type Locale } from "@/lib/i18n";
 import { useLocale } from "@/lib/use-prefs";
+import { LotusMark } from "./lotus-mark";
 
 type Tab = "talks" | "podcasts";
 
@@ -67,14 +68,15 @@ export function LibraryView() {
               className="group relative mt-4 block w-full overflow-hidden rounded-xl bg-black"
               style={{ aspectRatio: "16 / 9" }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`https://i.ytimg.com/vi/${requestedVideo}/hqdefault.jpg`}
-                alt=""
-                className="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
-              />
+              {/* Our own artwork, not the channel's thumbnail (those show teacher names). */}
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[var(--maroon)] to-[var(--maroon-deep)] opacity-95 transition-opacity group-hover:opacity-100"
+              >
+                <LotusMark className="h-24 w-24 -translate-y-8 text-[var(--saffron)] opacity-40 sm:h-28 sm:w-28" />
+              </span>
               <span className="absolute inset-0 flex items-center justify-center">
-                <span className="flex items-center gap-2 rounded-full bg-[var(--maroon)] px-5 py-2.5 text-sm text-[var(--paper)] shadow-lg">
+                <span className="mt-16 flex items-center gap-2 rounded-full bg-[var(--paper)] px-5 py-2.5 text-sm text-[var(--maroon)] shadow-lg">
                   <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--saffron)]" />
                   {t.watchThisTalk} ↗
                 </span>
