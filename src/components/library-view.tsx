@@ -18,16 +18,24 @@ export function LibraryView() {
   const requested = params.get("play");
   const requestedCollection = COLLECTIONS.find((c) => c.id === requested);
   const requestedVideo = params.get("video");
+  const spotlightTitle =
+    requestedCollection && requestedVideo
+      ? COLLECTION_VIDEOS[requestedCollection.id]?.find(([id]) => id === requestedVideo)?.[1]
+      : undefined;
+  const spotlight = requestedCollection && requestedVideo && spotlightTitle ? { title: spotlightTitle } : null;
+  const hasSpotlight = spotlight !== null;
   const [tab, setTab] = useState<Tab>(params.get("tab") === "podcasts" ? "podcasts" : "talks");
   const languages = [...new Set(COLLECTIONS.map((c) => c.language))];
   // Start with the visitor's language when there are talks in it.
   const [language, setLanguage] = useState<string | null>(requestedCollection?.language ?? null);
   const shown = language ?? (languages.includes(locale as Collection["language"]) ? locale : "all");
-  const [playing, setPlaying] = useState<string | null>(requestedCollection?.id ?? null);
+  const [playing, setPlaying] = useState<string | null>(spotlight ? null : (requestedCollection?.id ?? null));
   const openCard = useRef<HTMLLIElement | null>(null);
   useEffect(() => {
-    if (requestedCollection) openCard.current?.scrollIntoView({ block: "start", behavior: "smooth" });
-  }, [requestedCollection]);
+    // With a spotlight, the talk is already at the top of the page.
+    if (requestedCollection && !hasSpotlight) openCard.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [requestedCollection, hasSpotlight]);
+  const collectionCard = useRef<HTMLLIElement | null>(null);
   const kindLabel = { meditations: t.kindMeditations, classes: t.kindClasses, retreat: t.kindRetreat };
   const list = COLLECTIONS.filter((c) => shown === "all" || c.language === shown);
 
@@ -35,6 +43,71 @@ export function LibraryView() {
     <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-10 sm:px-6 sm:py-14">
       <h1 className="font-serif text-4xl text-[var(--maroon)] sm:text-5xl">{t.library}</h1>
       <p className="mt-3 max-w-xl text-[var(--muted)]">{t.libraryIntro}</p>
+
+      {spotlight && requestedCollection && requestedVideo ? (
+        <section
+          aria-label={t.fromConversation}
+          className="mt-8 rounded-2xl border border-[var(--saffron)]/60 bg-white/60 p-5 sm:p-6"
+        >
+          <p className="flex items-center gap-2 text-xs text-[var(--saffron)]">
+            <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-[var(--saffron)]" />
+            {t.fromConversation}
+          </p>
+          <h2 className="mt-1 font-serif text-2xl leading-snug text-[var(--maroon)]" lang={requestedCollection.language}>
+            {spotlight.title}
+          </h2>
+          <p className="mt-1 text-sm text-[var(--muted)]" lang={requestedCollection.language}>
+            {requestedCollection.title}
+          </p>
+          {requestedCollection.embeddable === false ? (
+            <a
+              href={youtubeUrl(requestedCollection.playlist, requestedVideo)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative mt-4 block w-full overflow-hidden rounded-xl bg-black"
+              style={{ aspectRatio: "16 / 9" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://i.ytimg.com/vi/${requestedVideo}/hqdefault.jpg`}
+                alt=""
+                className="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
+              />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex items-center gap-2 rounded-full bg-[var(--maroon)] px-5 py-2.5 text-sm text-[var(--paper)] shadow-lg">
+                  <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--saffron)]" />
+                  {t.watchThisTalk} ↗
+                </span>
+              </span>
+            </a>
+          ) : (
+            <div className="relative mt-4 w-full overflow-hidden rounded-xl bg-black" style={{ aspectRatio: "16 / 9" }}>
+              <iframe
+                src={playlistEmbed(requestedCollection.playlist, requestedVideo)}
+                title={spotlight.title}
+                className="absolute inset-0 h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          )}
+          {requestedCollection.embeddable === false ? (
+            <p className="mt-3 text-xs leading-5 text-[var(--muted)]">{t.youtubeOnly}</p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              setTab("talks");
+              setPlaying(requestedCollection.id);
+              window.setTimeout(() => collectionCard.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
+            }}
+            className="mt-4 text-sm text-[var(--maroon)] underline-offset-2 hover:underline"
+          >
+            {t.moreFromCollection} →
+          </button>
+        </section>
+      ) : null}
 
       <div role="tablist" aria-label={t.library} className="mt-8 flex gap-6 border-b border-[var(--line)]">
         {(["talks", "podcasts"] as const).map((k) => (
@@ -83,7 +156,10 @@ export function LibraryView() {
               return (
                 <li
                   key={c.id}
-                  ref={open ? openCard : undefined}
+                  ref={(el) => {
+                    if (open) openCard.current = el;
+                    if (c.id === requestedCollection?.id) collectionCard.current = el;
+                  }}
                   className={`scroll-mt-28 flex flex-col rounded-2xl border border-[var(--line)] bg-white/50 p-5 ${
                     open ? "sm:col-span-2" : ""
                   }`}
